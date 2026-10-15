@@ -278,6 +278,156 @@ await check('recording: "whole performance" take starts from the top and stops i
   return `started at ${r.started.toFixed(2)} s, auto-stopped after ${r.stoppedAfter.toFixed(1)} s, ${r.w}×${r.h}`;
 });
 
+await check('recorded audio: onsets line up with the score and the opening pitches are Für Elise', async () => {
+  const r = await ks<{ expected: number; matched: number; median: number; p95: number; offset: number; pitches: number[]; skews: number[]; frameMs: number; strikes: number; err?: string } | null>(
+    page,
+    `return (async () => {
+      k.settings.audio.ambience = false;
+      k.settings.audio.mech = 0;
+      k.applyAudioSettings();
+      k.switchScene('rain');
+      const sc = k.debugScene();
+      sc.values.song = 'fur-elise';
+      sc.values.voicing = 'mallets';
+      sc.values.tempo = 1;
+      k.restart();
+      Object.assign(k.settings.export, { aspect: 'landscape', res: 'hd', countdown: false, mode: 'performance', tail: 1 });
+      const first = k.recorder.last ? k.recorder.last.url : null;
+      await k.toggleRecord();
+      // world → recorded-pixel mapping (overview camera is static in this scene)
+      const cam = { x: k.camera.x, y: k.camera.y, h: k.camera.height, W: k.renderer.pixelWidth, H: k.renderer.pixelHeight };
+      await new Promise((res) => setTimeout(res, 9000));
+      k.stopRecording();
+      let rec = null;
+      for (let i = 0; i < 40 && !rec; i++) {
+        await new Promise((res) => setTimeout(res, 250));
+        if (k.recorder.last && k.recorder.last.url !== first) rec = k.recorder.last;
+      }
+      if (!rec) return { err: 'no recording' };
+      const ac = new AudioContext();
+      const buf = await ac.decodeAudioData(await rec.blob.arrayBuffer());
+      const ch = buf.getChannelData(0);
+      const sr = buf.sampleRate;
+      // onset detection: rises in short-time energy
+      const hop = Math.round(sr * 0.005);
+      const win = Math.round(sr * 0.01);
+      const env = [];
+      for (let i = 0; i + win < ch.length; i += hop) {
+        let e = 0;
+        for (let j = 0; j < win; j++) e += ch[i + j] * ch[i + j];
+        env.push(Math.sqrt(e / win));
+      }
+      const onsets = [];
+      let last = -1;
+      for (let i = 3; i < env.length; i++) {
+        const prev = Math.max(env[i - 3], env[i - 2], 1e-4);
+        if (env[i] > prev * 1.9 && env[i] > 0.01 && (last < 0 || i - last > 14)) {
+          onsets.push((i * hop) / sr);
+          last = i;
+        }
+      }
+      // expected note-group times inside the recorded window
+      const perf = sc.performance();
+      const exp = [...new Set(perf.events.filter((e) => e.notes.length).map((e) => Math.round(e.time * 1000) / 1000))].filter((t) => t < buf.duration - 0.3);
+      // best constant offset (recording start vs performance start)
+      let best = { off: 0, n: -1 };
+      for (let off = -1.5; off <= 1.5; off += 0.002) {
+        let n = 0;
+        for (const t of exp) if (onsets.some((o) => Math.abs(o - (t + off)) < 0.03)) n++;
+        if (n > best.n) best = { off, n };
+      }
+      // signed residuals; re-centre on their median (constant offsets come from when the
+      // recorder started and from the onset detector's own delay) and report the jitter
+      const signed = [];
+      for (const t of exp) {
+        let d = Infinity;
+        for (const o of onsets) if (Math.abs(o - (t + best.off)) < Math.abs(d)) d = o - (t + best.off);
+        if (Math.abs(d) < 0.03) signed.push(d);
+      }
+      signed.sort((a, b) => a - b);
+      const med = signed.length ? signed[Math.floor(signed.length / 2)] : 0;
+      best.off += med;
+      const errs = signed.map((d) => Math.abs(d - med) * 1000).sort((a, b) => a - b);
+      // pitch of the first 9 notes (monophonic opening) by autocorrelation
+      const pitches = [];
+      for (const t of exp.slice(0, 8)) {
+        const s0 = Math.round((t + best.off + 0.03) * sr);
+        const n = Math.round(sr * 0.09);
+        let bestLag = 0;
+        let bestC = -Infinity;
+        for (let lag = Math.round(sr / 1500); lag < Math.round(sr / 150); lag++) {
+          let c = 0;
+          for (let j = 0; j < n; j++) c += ch[s0 + j] * ch[s0 + j + lag];
+          if (c > bestC) {
+            bestC = c;
+            bestLag = lag;
+          }
+        }
+        pitches.push(Math.round(69 + 12 * Math.log2(sr / bestLag / 440)));
+      }
+      await ac.close();
+      // ---- video: when does the E5 pad visibly flash in the decoded frames?
+      const ch2 = sc.getChoreography();
+      const pad = ch2.acts.find((a) => a.notes.some((n) => n.pitch === 76));
+      const aspect = cam.W / cam.H;
+      const px = Math.round(((pad.x - cam.x) / (cam.h * aspect) + 0.5) * cam.W);
+      const py = Math.round((0.5 - (pad.y - 0.07 - cam.y) / cam.h) * cam.H);
+      const v = document.createElement('video');
+      v.muted = true;
+      v.src = rec.url;
+      await new Promise((res) => (v.onloadeddata = res));
+      const cv = document.createElement('canvas');
+      cv.width = cam.W;
+      cv.height = cam.H;
+      const g = cv.getContext('2d', { willReadFrequently: true });
+      const samples = [];
+      await new Promise((res) => {
+        const onFrame = (_now, meta) => {
+          g.drawImage(v, 0, 0, cam.W, cam.H);
+          const d = g.getImageData(px - 10, py - 3, 20, 6).data;
+          let lum = 0;
+          for (let i = 0; i < d.length; i += 4) lum += d[i] + d[i + 1] + d[i + 2];
+          samples.push({ t: meta.mediaTime, lum: lum / (d.length / 4) });
+          if (v.ended || meta.mediaTime > 7.5) return res();
+          v.requestVideoFrameCallback(onFrame);
+        };
+        v.requestVideoFrameCallback(onFrame);
+        v.onended = () => res();
+        v.play();
+      });
+      // expected E5 strikes in file time = score time + offset measured from the audio track
+      const e5 = ch2.acts.filter((a) => a.notes.some((n) => n.pitch === 76) && a.time + best.off < 7).map((a) => a.time + best.off);
+      const skews = [];
+      for (const te of e5) {
+        let bestJump = 0;
+        let at = null;
+        for (let i = 1; i < samples.length; i++) {
+          if (Math.abs(samples[i].t - te) > 0.25) continue;
+          const jump = samples[i].lum - samples[i - 1].lum;
+          if (jump > bestJump) {
+            bestJump = jump;
+            at = samples[i].t;
+          }
+        }
+        if (at !== null && bestJump > 6) skews.push(Math.round((at - te) * 1000));
+      }
+      const frameMs = samples.length > 2 ? Math.round(((samples[samples.length - 1].t - samples[0].t) / (samples.length - 1)) * 1000) : -1;
+      return { expected: exp.length, matched: errs.length, median: errs[Math.floor(errs.length / 2)] ?? -1, p95: errs[Math.floor(errs.length * 0.95)] ?? -1, offset: best.off, pitches, skews, frameMs, strikes: e5.length };
+    })()`,
+  );
+  if (!r || r.err) throw new Error(r?.err ?? 'no result');
+  // the first eight notes are the unaccompanied motif (the bass enters with the ninth)
+  const motif = [76, 75, 76, 75, 76, 71, 74, 72];
+  const pitchOk = r.pitches.filter((p, i) => p === motif[i] || p === motif[i] + 12 || p === motif[i] - 12).length;
+  const detail = `onsets matched ${r.matched}/${r.expected} within ±30 ms; jitter after removing the constant offset: median ${r.median.toFixed(1)} ms, 95th pct ${r.p95.toFixed(1)} ms (offset ${(r.offset * 1000).toFixed(0)} ms); opening pitches ${r.pitches.join(' ')} (${pitchOk}/8 = E5 D♯5 E5 D♯5 E5 B4 D5 C5, octave-tolerant)`;
+  const av = `; video: E5 pad flashes vs its sounding note: ${r.skews.map((x) => `${x > 0 ? '+' : ''}${x} ms`).join(', ')} over ${r.skews.length}/${r.strikes} strikes (frame interval ≈ ${r.frameMs} ms)`;
+  if (r.matched < r.expected * 0.8) throw new Error(detail + av);
+  if (r.p95 > 15) throw new Error(detail + av);
+  if (pitchOk < 7) throw new Error(detail + av);
+  if (r.skews.length < Math.min(2, r.strikes) || r.skews.some((x) => Math.abs(x) > Math.max(50, r.frameMs * 1.5))) throw new Error(detail + av);
+  return detail + av;
+});
+
 await check('screenshot downloads a PNG', async () => {
   const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }), page.getByRole('button', { name: 'Screenshot', exact: true }).click()]);
   const name = dl.suggestedFilename();
