@@ -5,7 +5,7 @@
 import { TAU, clamp, lastIndexAtOrBefore } from '../../core/math.ts';
 import { Rng } from '../../core/rng.ts';
 import type { InstrumentId } from '../../audio/instruments.ts';
-import { ActivationIndex, hash01, sampleActor, type Activation, type BallActor, type DrawCtx, type Sample } from '../../choreography/core.ts';
+import { ActivationIndex, hash01, sampleActor, validateChoreography, type Activation, type BallActor, type DrawCtx, type Sample } from '../../choreography/core.ts';
 import { allScores, getScore, UNAVAILABLE } from '../../music/library.ts';
 import { beatToSeconds, timeNotes, type ScoreData, type TimedNote, type VoiceRole } from '../../music/score.ts';
 import type { Bounds } from '../../rendering/camera.ts';
@@ -150,6 +150,13 @@ export class PerformanceScene implements Scene {
     this.maxBallSpan = this.sortedBalls.reduce((m, b) => Math.max(m, b.segs[b.segs.length - 1].t1 - b.segs[0].t0), 0);
     this.phrases = score.phrases.map((p) => ({ t: leadIn + beatToSeconds(p.t, score, tempo), label: p.label }));
     this.svc.camera.setBounds(ch.bounds, this.svc.camera.mode === 'overview');
+    // validate timing and reachability of what was just built; report honestly if anything is off
+    const rep = validateChoreography(ch.balls, ch.acts, { maxSpeed: ch.maxSpeed, contactTol: ch.contactTol, dt: 1 / 90 });
+    this.validation = [...(ch.problems ?? []), ...rep.problems];
+    if (this.validation.length) {
+      console.warn(`[${this.family.id}] choreography issues`, this.validation);
+      this.svc.notify(`${score.title} at ${tempo.toFixed(2)}× has ${this.validation.length} timing/reachability issue(s) in this scene — try the default tempo.`, 'warn');
+    }
   }
 
   /** for tests and diagnostics */

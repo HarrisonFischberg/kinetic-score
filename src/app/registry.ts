@@ -5,8 +5,7 @@ import { CascadeScene } from '../scenes/generative/cascade.ts';
 import { SequencerScene } from '../scenes/generative/sequencer.ts';
 import { ShepardLabScene } from '../scenes/generative/shepardLab.ts';
 import { PerformanceScene } from '../scenes/performance/perfScene.ts';
-import { rainFamily } from '../scenes/performance/rain.ts';
-import { canonFamily } from '../scenes/performance/canon.ts';
+import { FAMILIES } from '../scenes/performance/families.ts';
 
 export interface SceneEntry {
   id: string;
@@ -21,8 +20,7 @@ export const SCENES: SceneEntry[] = [
   { id: 'cascade', title: 'Collision Cascade', mode: 'playground', make: () => new CascadeScene() },
   { id: 'sequencer', title: 'Geometric Sequencer', mode: 'playground', make: () => new SequencerScene() },
   { id: 'shepard', title: 'Shepard-Tone Lab', mode: 'playground', make: () => new ShepardLabScene() },
-  { id: 'canon', title: 'Canon Contraption', mode: 'performance', make: () => new PerformanceScene(canonFamily) },
-  { id: 'rain', title: 'Melody Rain', mode: 'performance', make: () => new PerformanceScene(rainFamily) },
+  ...FAMILIES.map((f): SceneEntry => ({ id: f.id, title: f.title, mode: 'performance', make: () => new PerformanceScene(f) })),
 ];
 
 export function sceneEntry(id: string): SceneEntry | undefined {

@@ -231,9 +231,9 @@ export interface PathRideOpts {
   pre?: (rideStart: number, start: Pt) => Segment[];
 }
 
-export function pathRide(b: MachineBuilder, notes: TimedNote[], o: PathRideOpts): { start: number; speed: number } {
+export function pathRide(b: MachineBuilder, notes: TimedNote[], o: PathRideOpts): { start: number; speed: number; t0: number; gateFrom: number; gateEnd: number } {
   const groups = groupNotes(notes);
-  if (!groups.length) return { start: 0, speed: 0 };
+  if (!groups.length) return { start: 0, speed: 0, t0: 0, gateFrom: 0, gateEnd: 0 };
   const t0 = groups[0].time;
   const tN = groups[groups.length - 1].time;
   const span = Math.max(0.001, tN - t0);
@@ -318,7 +318,7 @@ export function pathRide(b: MachineBuilder, notes: TimedNote[], o: PathRideOpts)
       },
     });
   });
-  return { start: tr, speed: v };
+  return { start: tr, speed: v, t0, gateFrom: o.gateFrom, gateEnd };
 }
 
 function mixDim(a: RGB, b: RGB): RGB {
