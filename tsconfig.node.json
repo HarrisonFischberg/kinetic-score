@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "webxr",
+      "node"
+    ],
+    "noEmit": true
+  },
+  "include": [
+    "src",
+    "tests",
+    "scripts"
+  ]
+}

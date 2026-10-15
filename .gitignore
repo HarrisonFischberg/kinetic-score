@@ -1,4 +1,6 @@
 node_modules/
 dist/
+dist-static/
+build/
 .DS_Store
 *.log
