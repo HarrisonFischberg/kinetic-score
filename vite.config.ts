@@ -7,5 +7,12 @@ export default defineConfig({
   resolve: {
     alias: { three: fileURLToPath(new URL('./vendor/three/three.module.js', import.meta.url)) },
   },
+  plugins: [
+    {
+      // the placeholder is only used by the zero-dependency build (scripts/build-static.ts)
+      name: 'strip-importmap-placeholder',
+      transformIndexHtml: (html) => html.replace('<!--IMPORTMAP-->', ''),
+    },
+  ],
   build: { target: 'es2022', chunkSizeWarningLimit: 1500 },
 });

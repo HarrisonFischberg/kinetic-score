@@ -65,7 +65,13 @@ was done and what was actually run/verified.
 - 10: overview framing reserves headroom for the title overlay; final full runs: 95/95 unit tests,
   32/32 headless browser checks, 0 console errors.
 
-Iterations used: 10 of 40.
+- 11: npm access enabled by the user. `npm install` (Vite 7.3.7, TypeScript 5.9.3, 0 vulnerabilities),
+  `npm run typecheck` clean, `npm test` 95/95, `npm run build` (Vite) succeeded (745 kB JS / 208 kB
+  gzip). Browser suite against `vite preview` of the Vite build: 31/32 in the full run, 0 console
+  errors; the one failure was the Canon recorded-audio analysis (one outlier onset under load), which
+  then passed 3/3 when re-run on its own. Vite config now strips the static-build placeholder.
+
+Iterations used: 11 of 40.
 
 ## Song support per scene (computed by each family, also shown in the Song menu)
 - Canon Contraption, Melody Rain, Musical Maze: all 8 excerpts.
@@ -78,5 +84,5 @@ Iterations used: 10 of 40.
 - Real-device checks listed in docs/VERIFICATION.md (hearing, recognisability, AV sync by eye,
   Shepard perception, Safari/Firefox recording, touch devices, frame rate on real GPUs).
 - MIDI import in the app not offered (score-JSON import is implemented and validated).
-- `npm install` / Vite build could not be run here (registry blocked); the zero-dependency
-  build was verified instead.
+- The Canon recorded-audio analysis is occasionally flaky inside the full headless run (CPU-starved
+  software rendering); it passes when run alone.

@@ -35,8 +35,8 @@ TypeScript and Node type definitions.
 
 ### Zero-dependency path
 
-The cloud environment this was built in could not reach the npm registry, so there is also a
-build that needs nothing but Node and the TypeScript compiler:
+There is also a build that needs nothing but Node and the TypeScript compiler (useful offline;
+it was the first build verified while npm was unavailable):
 
 ```bash
 node scripts/build-static.ts   # TypeScript → native ES modules + import map in dist-static/
@@ -272,7 +272,8 @@ Third-party code: three.js r186 and its type definitions (MIT, vendored in `vend
 
 ## Known limitations
 
-- Verified in headless Chromium only (software rendering, virtual audio output). Safari and
+- Both `npm run build` (Vite) and the zero-dependency build were verified, in headless Chromium
+  only (software rendering, virtual audio output). Safari and
   Firefox, real GPUs, real speakers and touch devices have not been exercised in this
   environment; see the manual checklist.
 - Recording produced WebM in the test browser (it has no H.264 encoder); MP4 depends on the

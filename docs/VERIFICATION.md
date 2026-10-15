@@ -9,6 +9,13 @@ maze door timing, physics determinism/tunnelling/retrigger/sensors, stepper cap,
 transport and scheduler (pause/resume/seek/reset, no duplicates or reordering), Shepard maths,
 settings/project/layout validation, sequencer loop length, MIDI parsing.
 
+### Install and build
+`npm install` (Vite 7.3.7, TypeScript 5.9.3; 0 vulnerabilities), `npm run typecheck` clean,
+`npm run build` succeeds (Vite production build in `dist/`). The browser suite below was run against
+both the zero-dependency build (`dist-static/`, 32/32) and `vite preview` of the Vite build
+(31/32 in the full run — the Canon recorded-audio analysis had one outlier onset under load and
+passed 3/3 when re-run alone).
+
 ### Headless browser — `node scripts/browser-check.ts`
 Chromium via Playwright, software WebGL (SwiftShader), `--autoplay-policy=no-user-gesture-required`
 and the default virtual audio device. Latest run: **32/32 passed, 0 console errors**.
