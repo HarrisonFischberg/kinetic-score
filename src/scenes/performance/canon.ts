@@ -56,7 +56,10 @@ function pegboard(x0: number, x1: number, yTop: number, yBot: number, lo: number
   };
 }
 
-function wire(id: string, a: Pt, b: Pt, t0: number, t1: number): Prop {
+function wire(id: string, a: Pt, b: Pt, tA: number, tB: number): Prop {
+  // the relay signal travels in at most ~1.2 s, ending when the next stage is released
+  const t1 = tB;
+  const t0 = Math.max(tA, tB - 1.2);
   return {
     id,
     layer: 'back',
@@ -82,7 +85,7 @@ function stageFrame(k: number, cy: number): Prop {
     layer: 'back',
     draw(dl: DrawList, _t: number, c: PropCtx) {
       dl.rect(0, cy, HALF_W + 0.3, HALF_H + 0.3, 0, c.pal.grid, 0.5, 0.6, 0.03);
-      dl.text(STAGE_TITLES[k], -HALF_W + 0.4, cy + HALF_H - 0.45, 0.42, c.pal.dim, 0.75, 'left');
+      dl.text(STAGE_TITLES[k], HALF_W - 0.4, cy + HALF_H - 0.45, 0.42, c.pal.dim, 0.75, 'right');
     },
   };
 }
@@ -161,7 +164,17 @@ export const canonFamily: Family = {
     // ---------------- Stage I
     {
       const cy = cyOf(0);
-      rotaryHammer(b, inStage(0, 'bass'), { id: 's1:bass', voice: 'bass', pivot: { x: -8, y: cy - 0.6 }, radius: 4.4, from: Math.PI * 0.12, to: Math.PI * 0.88, bellR: 0.5 });
+      // bell tower: bells stacked up the left wall, struck by a rotary hammer
+      rotaryHammer(b, inStage(0, 'bass'), { id: 's1:bass', voice: 'bass', pivot: { x: -5.4, y: cy - 0.6 }, radius: 5.8, from: Math.PI * 1.36, to: Math.PI * 0.64, bellR: 0.55 });
+      props.push({
+        id: 's1:tower',
+        layer: 'back',
+        draw(dl: DrawList, _t: number, c: PropCtx) {
+          dl.line(-12.1, cy - 7.4, -12.1, cy + 6.8, 0.1, c.pal.structure, 0.55);
+          dl.line(-12.9, cy + 6.8, -11.3, cy + 6.8, 0.1, c.pal.structure, 0.55);
+          dl.line(-12.9, cy - 7.4, -9.6, cy - 7.4, 0.1, c.pal.structure, 0.55);
+        },
+      });
       const mel = inStage(0, 'melody');
       if (mel.length) {
         const r = bounceChain(b, mel, { id: 's1:mel', voice: 'melody', r: BALL_R, g: G, start: { x: -0.6, y: cy + 8.2 }, layout: stairs(0.4, 12, cy + 6, cy - 5.5), style: 'stair', padHalf: 0.55, exit: { x: 12.4, y: cy - 8.6 }, exitDur: 0.7, dropTime: 0.85, maxHop: 1.3 });
@@ -240,13 +253,15 @@ export const canonFamily: Family = {
         // feed rail from the upper left into the funnel rim
         const start = fp.at(0);
         const feed: Pt[] = [];
-        for (let i = 0; i <= 20; i++) feed.push({ x: -7.5 + (start.x + 7.5) * (i / 20), y: cy + 4.8 + (start.y - cy - 4.8) * (i / 20) });
+        const fx = -5.6;
+        const fy = cy + 5.4;
+        for (let i = 0; i <= 20; i++) feed.push({ x: fx + (start.x - fx) * (i / 20), y: fy + (start.y - fy) * (i / 20) });
         const pts: Pt[] = [...feed];
         for (let i = 1; i < fp.xs.length; i++) pts.push({ x: fp.xs[i], y: fp.ys[i] });
         const path = new Path(pts);
-        const feedLen = Math.hypot(start.x + 7.5, start.y - cy - 4.8);
+        const feedLen = Math.hypot(start.x - fx, start.y - fy);
         const r = pathRide(b, mel, { id: 's3:mel', voice: 'melody', r: BALL_R, path, gateFrom: feedLen + 0.6, gateTo: path.length - 1.8, style: 'chime', trackWidth: 0.05, drawTrack: false });
-        if (melodyEnds.length) props.push(wire('relay23', melodyEnds[melodyEnds.length - 1].pt, { x: -7.5, y: cy + 4.8 }, melodyEnds[melodyEnds.length - 1].t, r.start));
+        if (melodyEnds.length) props.push(wire('relay23', melodyEnds[melodyEnds.length - 1].pt, { x: fx, y: fy }, melodyEnds[melodyEnds.length - 1].t, r.start));
         stageStart[2] = r.start;
         props.push({
           id: 's3:funnel',
@@ -268,7 +283,8 @@ export const canonFamily: Family = {
                 py = y;
               }
             }
-            dl.line(-7.5, cy + 4.8, start.x, start.y, 0.06, c.pal.structure, 0.8, 0.05);
+            dl.line(fx, fy, start.x, start.y, 0.06, c.pal.structure, 0.8, 0.05);
+            dl.arc(fx, fy + 0.3, 0.32, 0.03, Math.PI * 1.1, Math.PI * 0.8, c.pal.structure, 0.8);
           },
         });
       }
