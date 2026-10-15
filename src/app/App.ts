@@ -5,7 +5,8 @@ import { INSTRUMENTS } from '../audio/instruments.ts';
 import { ShepardEngine } from '../audio/shepard.ts';
 import { clamp } from '../core/math.ts';
 import { randomSeed, Rng } from '../core/rng.ts';
-import { allScores, loadLibrary, UNAVAILABLE } from '../music/library.ts';
+import { allScores, loadLibrary, registerScore, UNAVAILABLE } from '../music/library.ts';
+import { validateScore, type ScoreData } from '../music/score.ts';
 import { CameraController } from '../rendering/camera.ts';
 import { Particles, Trails } from '../rendering/effects.ts';
 import { getPalette, PALETTES } from '../rendering/palette.ts';
@@ -436,6 +437,10 @@ export class App {
   private playEvent(e: PerfEvent, when: number): Cancellable[] {
     if (!this.audio.running) return [];
     const out: Cancellable[] = [];
+    if (e.mech) {
+      const m = this.audio.mech(e.mech.kind, e.mech.vel, e.pan, when);
+      if (m) out.push(m);
+    }
     for (const n of e.notes) {
       const v = this.audio.play(n.inst, n.pitch, { vel: n.vel, when, dur: n.dur, pan: e.pan });
       if (v) out.push(v);
@@ -801,6 +806,46 @@ export class App {
     const songDef = this.scene.params.find((d) => d.key === 'song');
     const unavailable = songDef?.options?.filter((o) => o.disabled) ?? [];
     if (unavailable.length) this.songInfo.append(h('p', { class: 'note' }, 'Not available in this scene: ' + unavailable.map((o) => `${o.label} (${o.disabled})`).join('; ')));
+    // optional: import note-event JSON (validated data only, kept for this session)
+    const ta = h('textarea', { 'aria-label': 'Score JSON to import', spellcheck: false, placeholder: 'Paste a kinetic-score/score@1 JSON object' }) as HTMLTextAreaElement;
+    const msg = h('p', { class: 'note' }, 'You are responsible for the rights to anything you import. Imported scores are validated as plain data (never executed) and kept only for this session.');
+    this.songInfo.append(
+      h('div', { class: 'group-title' }, 'Import a score (optional)'),
+      ta,
+      h('div', { class: 'btnrow' }, h('button', { class: 'btn', type: 'button', onclick: () => this.importScore(ta.value, msg) }, 'Validate & import')),
+      msg,
+    );
+  }
+
+  private importScore(text: string, msg: HTMLElement): void {
+    let raw: unknown;
+    try {
+      raw = JSON.parse(text);
+    } catch (e) {
+      msg.textContent = `Not valid JSON: ${e instanceof Error ? e.message : String(e)}`;
+      msg.className = 'note err';
+      return;
+    }
+    const errs = validateScore(raw);
+    if (errs.length) {
+      msg.textContent = `Score rejected: ${errs.slice(0, 4).join(' ')}`;
+      msg.className = 'note err';
+      return;
+    }
+    const s = JSON.parse(JSON.stringify(raw)) as ScoreData;
+    s.id = `import-${s.id}`.slice(0, 64);
+    s.priority = false;
+    registerScore(s);
+    const id = this.entry.id;
+    this.scene.dispose();
+    this.scene = null as unknown as Scene;
+    this.switchSceneFresh(id);
+    const def = this.scene.params.find((d) => d.key === 'song');
+    const opt = def?.options?.find((o) => o.value === s.id);
+    if (opt && !opt.disabled) {
+      this.setSceneParam('song', s.id);
+      this.notify(`Imported “${s.title}”`);
+    } else this.notify(`Imported “${s.title}”, but this scene cannot perform it: ${opt?.disabled ?? 'unknown reason'}`, 'warn');
   }
 
   private soundControls(): HTMLElement {

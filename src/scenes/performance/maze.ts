@@ -216,6 +216,7 @@ function buildMaze(b: ReturnType<typeof newBuilder>, notes: TimedNote[], id: str
       prevD = d;
     }
     if (!windows.length) continue;
+    for (const [w0] of windows) b.mech.push({ time: w0 - 0.15, kind: 'clack', vel: 0.45, x: mid.x });
     const h = cell * 0.5;
     const door: Door = horiz
       ? { id: `${id}:door${k}`, ax: mid.x, ay: mid.y + h, bx: mid.x, by: mid.y - h, windows }
@@ -283,6 +284,7 @@ export const mazeFamily: Family = {
       maxSpeed: 12,
       contactTol: 0.02,
       problems: b.problems,
+      mech: b.mech,
     };
     ch.doors = doors;
     return ch;

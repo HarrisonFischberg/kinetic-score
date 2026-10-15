@@ -1,5 +1,5 @@
 // Contract between the app shell and every scene (playground or performance).
-import type { AudioEngine } from '../audio/engine.ts';
+import type { AudioEngine, MechKind } from '../audio/engine.ts';
 import type { ShepardEngine } from '../audio/shepard.ts';
 import type { InstrumentId } from '../audio/instruments.ts';
 import type { CameraController, Bounds } from '../rendering/camera.ts';
@@ -102,6 +102,8 @@ export interface PerfEvent {
   pan: number;
   /** id of the prop that visibly produces it */
   target: string;
+  /** quiet mechanical (non-musical) sound for structural contacts */
+  mech?: { kind: MechKind; vel: number };
 }
 
 export interface PerformanceInfo {

@@ -118,6 +118,7 @@ export const orbitalFamily: Family = {
           const tm = (t0 + t1) / 2;
           segs.push(lin(t0, tm, a, mid), lin(tm, t1, mid, z));
           deflections.push({ t: tm, p: mid });
+          b.mech.push({ time: tm, kind: 'tick', vel: 0.5, x: mid.x });
         } else segs.push(lin(t0, t1, a, z));
       }
       const tl = groups[groups.length - 1].time;
@@ -200,6 +201,7 @@ export const orbitalFamily: Family = {
       maxSpeed: MAX_SPEED * 1.05,
       contactTol: 0.02,
       problems: b.problems,
+      mech: b.mech,
     };
   },
 };

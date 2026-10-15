@@ -4,20 +4,30 @@
 import { TAU, clamp, lastIndexAtOrBefore } from '../core/math.ts';
 import { noteName, type TimedNote, type VoiceRole } from '../music/score.ts';
 import type { DrawList, RGB } from '../rendering/draw.ts';
+import type { MechKind } from '../audio/engine.ts';
 import type { Prop, PropCtx, Voicing } from '../scenes/performance/perfScene.ts';
 import { Path, flightBetween, flightVelAt, type Activation, type BallActor, type Pt, type Segment } from './core.ts';
+
+export interface MechEvent {
+  time: number;
+  kind: MechKind;
+  vel: number;
+  x: number;
+}
 
 export interface MachineBuilder {
   balls: BallActor[];
   props: Prop[];
   acts: Activation[];
+  /** quiet mechanical sounds of structural (non-musical) contacts */
+  mech: MechEvent[];
   voicing: Voicing;
   /** reachability / plausibility problems found while building */
   problems: string[];
 }
 
 export function newBuilder(voicing: Voicing): MachineBuilder {
-  return { balls: [], props: [], acts: [], voicing, problems: [] };
+  return { balls: [], props: [], acts: [], mech: [], voicing, problems: [] };
 }
 
 export interface NoteGroup {
@@ -148,6 +158,7 @@ export function bounceChain(b: MachineBuilder, notes: TimedNote[], oIn: BounceCh
   const need = Math.abs(o.exit.x - lastPt.x) - (o.exit.y - lastPt.y);
   const exitDur = Math.max(o.exitDur, Math.sqrt((2 * Math.max(0, need)) / o.g) * 1.1 + 0.08);
   segs.push(flightBetween(tl, lastPt, tl + exitDur, o.exit, o.g));
+  b.mech.push({ time: release, kind: 'tick', vel: 0.5, x: o.start.x }, { time: tl + exitDur, kind: 'thud', vel: 0.6, x: o.exit.x });
   b.balls.push({ id: ballId, r: o.r, voice: o.voice, segs, fadeIn: 0.25, fadeOut: 0.18, hits: groups.map((g) => g.time) });
   // derive each pad's orientation from the incoming and outgoing velocities (mirror normal)
   const flights = segs.filter((s): s is Extract<Segment, { kind: 'flight' }> => s.kind === 'flight');
@@ -666,6 +677,7 @@ export function seesaw(b: MachineBuilder, o: SeesawOpts): { endAt: (t: number) =
       return out;
     },
   };
+  b.mech.push({ time: o.tipTime, kind: 'clack', vel: 0.8, x: o.pivot.x });
   b.balls.push({ id: `${o.id}:messenger`, r, voice: o.voice, color: [0.8, 0.82, 0.9], segs: [{ kind: 'hold', t0: 0, t1: t0, x: o.messengerFrom.x, y: o.messengerFrom.y }, flightBetween(t0, o.messengerFrom, o.tipTime, landPt, o.g), after], fadeIn: 0.2, fadeOut: 0.5, hits: [] });
   b.props.push({
     id: `${o.id}:beam`,

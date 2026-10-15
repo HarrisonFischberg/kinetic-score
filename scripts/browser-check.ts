@@ -314,6 +314,24 @@ await check('persistence: a saved project survives a reload and loads back', asy
   return `found=${r.found} palette=${r.palette} scene=${r.scene}`;
 });
 
+await check('score import: validated JSON becomes a playable song; hostile JSON is rejected', async () => {
+  const ode = await page.evaluate(async () => (await fetch('./scores/ode-to-joy.json')).json());
+  const r = await ks<{ ok: string; bad: string; song: unknown; scene: unknown }>(
+    page,
+    `k.switchScene('rain');
+     const msg = document.createElement('p');
+     k.importScore(JSON.stringify({ ...a, notes: [{ t: 0, d: 1, p: 999, v: 1, voice: 'x' }] }), msg);
+     const bad = msg.textContent;
+     const custom = { ...a, id: 'my-ode', title: 'My Ode (imported)' };
+     k.importScore(JSON.stringify(custom), msg);
+     return { ok: msg.className, bad, song: k.debugScene().values.song, scene: k.debugState().scene };`,
+    ode,
+  );
+  if (!String(r.bad).includes('rejected')) throw new Error(`bad score not rejected: ${r.bad}`);
+  if (r.song !== 'import-my-ode') throw new Error(`song is ${r.song}`);
+  return `rejected: "${String(r.bad).slice(0, 60)}…"; imported → song=${r.song} in ${r.scene}`;
+});
+
 await check('mobile portrait layout: no horizontal scroll, canvas visible, touch-safe', async () => {
   const m = await newPage(390, 844);
   await m.getByRole('button', { name: 'Continue without sound' }).click();

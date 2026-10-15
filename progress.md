@@ -63,6 +63,6 @@ was done and what was actually run/verified.
 ## Remaining / not verifiable here
 - Real-device checks listed in docs/VERIFICATION.md (hearing, recognisability, AV sync by eye,
   Shepard perception, Safari/Firefox recording, touch devices, frame rate on real GPUs).
-- Optional score/MIDI import not implemented (documented).
+- MIDI import in the app not offered (score-JSON import is implemented and validated).
 - `npm install` / Vite build could not be run here (registry blocked); the zero-dependency
   build was verified instead.

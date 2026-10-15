@@ -242,7 +242,11 @@ machine-readable typesettings found (Mutopia #276 and #301) are licensed CC BY-S
 and no verified public-domain or attribution-only note data was available, so they appear in the
 app as disabled with that reason rather than being reconstructed from memory.
 
-Optional score/MIDI import is not implemented; scores are bundled data only.
+**Importing a score (optional):** in a performance scene, *Music & source → Import a score*
+accepts a `kinetic-score/score@1` JSON object (same shape as the files in `public/scores/`). It is
+validated field by field as plain data (never executed), renamed `import-…`, offered in the Song
+menu for this session only, and you are responsible for the rights to what you import. MIDI import
+is not offered in the app (the bundled `scripts/build-scores.ts` shows how MIDI was converted).
 
 Third-party code: three.js r186 and its type definitions (MIT, vendored in `vendor/`).
 

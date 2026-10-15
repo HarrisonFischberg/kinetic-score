@@ -265,9 +265,9 @@ export class AudioEngine {
     for (const v of [...this.voices]) v.cancel();
   }
 
-  mech(kind: MechKind, vel: number, pan = 0, when?: number): void {
+  mech(kind: MechKind, vel: number, pan = 0, when?: number): { cancel(): void } | null {
     const ctx = this.ctx;
-    if (!ctx || ctx.state !== 'running' || !this.noise || this.mechLevel <= 0) return;
+    if (!ctx || ctx.state !== 'running' || !this.noise || this.mechLevel <= 0) return null;
     const t = Math.max(ctx.currentTime, when ?? 0);
     const src = ctx.createBufferSource();
     src.buffer = this.noise;
@@ -306,6 +306,15 @@ export class AudioEngine {
       bp.disconnect();
       g.disconnect();
       p.disconnect();
+    };
+    return {
+      cancel: () => {
+        try {
+          if (t > ctx.currentTime) src.stop(0);
+        } catch {
+          /* already stopped */
+        }
+      },
     };
   }
 

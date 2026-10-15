@@ -5,6 +5,7 @@
 import { TAU, clamp, lastIndexAtOrBefore } from '../../core/math.ts';
 import { Rng } from '../../core/rng.ts';
 import type { InstrumentId } from '../../audio/instruments.ts';
+import type { MechKind } from '../../audio/engine.ts';
 import { ActivationIndex, hash01, sampleActor, validateChoreography, type Activation, type BallActor, type DrawCtx, type Sample } from '../../choreography/core.ts';
 import { allScores, getScore, UNAVAILABLE } from '../../music/library.ts';
 import { beatToSeconds, timeNotes, type ScoreData, type TimedNote, type VoiceRole } from '../../music/score.ts';
@@ -50,6 +51,8 @@ export interface Choreography {
   contactTol: number;
   /** plausibility problems detected while building (e.g. a pad the ball would not bounce off) */
   problems?: string[];
+  /** quiet mechanical sounds of structural contacts (gates, drains, seesaws, doors) */
+  mech?: { time: number; kind: MechKind; vel: number; x: number }[];
 }
 
 export interface FamilyContext {
@@ -111,7 +114,7 @@ export class PerformanceScene implements Scene {
       { key: 'song', label: 'Song', type: 'select', applies: 'restart', options: songOpts, group: 'Performance' },
       { key: 'tempo', label: 'Tempo', type: 'range', min: 0.6, max: 1.4, step: 0.05, unit: '×', applies: 'restart', group: 'Performance', hint: 'Rebuilds the machine timing; pitch is unchanged. Applies on restart (R).' },
       { key: 'voicing', label: 'Instruments', type: 'select', applies: 'restart', group: 'Performance', options: Object.entries(VOICINGS).map(([value, v]) => ({ value, label: v.label })) },
-      { key: 'guides', label: 'Show guide paths', type: 'toggle', applies: 'live', group: 'View', hint: 'Faint lines showing upcoming routes' },
+      { key: 'guides', label: 'Show guide paths', type: 'toggle', applies: 'live', group: 'View', hint: 'Dotted look-ahead of where each moving marble goes next' },
     ];
   }
 
@@ -144,7 +147,10 @@ export class PerformanceScene implements Scene {
     ch.acts.sort((a, b) => a.time - b.time);
     this.actTimes = ch.acts.map((a) => a.time);
     this.index = new ActivationIndex(ch.acts);
-    this.events = ch.acts.map((a) => ({ time: a.time, notes: a.notes, pan: clamp(a.x / Math.max(4, (ch.bounds.maxX - ch.bounds.minX) / 2), -0.85, 0.85), target: a.target }));
+    const halfW = Math.max(4, (ch.bounds.maxX - ch.bounds.minX) / 2);
+    this.events = ch.acts.map((a) => ({ time: a.time, notes: a.notes, pan: clamp(a.x / halfW, -0.85, 0.85), target: a.target }));
+    for (const m of ch.mech ?? []) this.events.push({ time: m.time, notes: [], pan: clamp(m.x / halfW, -0.85, 0.85), target: 'mech', mech: { kind: m.kind, vel: m.vel } });
+    this.events.sort((a, b) => a.time - b.time);
     this.sortedBalls = [...ch.balls].sort((a, b) => a.segs[0].t0 - b.segs[0].t0);
     this.ballStarts = this.sortedBalls.map((b) => b.segs[0].t0);
     this.maxBallSpan = this.sortedBalls.reduce((m, b) => Math.max(m, b.segs[b.segs.length - 1].t1 - b.segs[0].t0), 0);
@@ -218,6 +224,7 @@ export class PerformanceScene implements Scene {
     // balls: only those whose lifetime overlaps t (binary search on start times)
     const hi = lastIndexAtOrBefore(this.ballStarts, t);
     const s = this.sample;
+    const guides = this.values.guides === true;
     for (let i = hi; i >= 0; i--) {
       const b = this.sortedBalls[i];
       if (t - this.ballStarts[i] > this.maxBallSpan) break;
@@ -245,6 +252,7 @@ export class PerformanceScene implements Scene {
         if (k >= 0) flash = Math.exp(-(t - b.hits[k]) / 0.12);
       }
       dl.ball(s.x, s.y, b.r * s.scale, c, s.alpha, (s.x / Math.max(0.05, b.r)) * 0.6, flash);
+      if (guides) this.drawGuide(dl, b, t, s.x, s.y, c);
     }
     for (const p of ch.props) if (p.layer === 'front') p.draw(dl, t, ctx);
     // deterministic sparks for recent activations
@@ -273,6 +281,25 @@ export class PerformanceScene implements Scene {
     void TAU;
   }
 
+  /** dotted look-ahead of where a marble is about to go (only while it is moving) */
+  private drawGuide(dl: DrawList, b: BallActor, t: number, x0: number, y0: number, c: RGB): void {
+    const q: Sample = { x: 0, y: 0, visible: false, alpha: 1, scale: 1 };
+    let px = x0;
+    let py = y0;
+    let moved = 0;
+    for (let k = 1; k <= 12; k++) {
+      sampleActor(b, t + k * 0.06, q);
+      if (!q.visible) break;
+      const d = Math.hypot(q.x - px, q.y - py);
+      moved += d;
+      if (d < 0.02) continue;
+      dl.disc(q.x, q.y, b.r * 0.22, c, 0.32 * (1 - k / 13));
+      px = q.x;
+      py = q.y;
+    }
+    if (moved < 0.05) return;
+  }
+
   private defaultFocus(t: number): { x: number; y: number; h: number } {
     const ch = this.choreo!;
     // anticipatory framing: weight upcoming activations in the next 1.5 s
@@ -298,7 +325,7 @@ export class PerformanceScene implements Scene {
     const n = this.events.reduce((s, e) => s + e.notes.length, 0);
     return [
       ['Notes', String(n)],
-      ['Activations', String(this.events.length)],
+      ['Activations', String(this.events.filter((e) => e.notes.length).length)],
       ['Balls', String(this.choreo?.balls.length ?? 0)],
     ];
   }

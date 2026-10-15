@@ -312,6 +312,7 @@ export const canonFamily: Family = {
         const rest = { x: x * 0.45, y: bowlY - 3.1 };
         const g0 = (2 * (top.y - hit.y)) / (fall * fall);
         b.balls.push({ id, r: BALL_R, voice: note.voice, segs: [{ kind: 'hold', t0: 0, t1: t0, ...top }, flightBetween(t0, top, note.time, hit, g0), flightBetween(note.time, hit, note.time + 0.5, rest, g0), { kind: 'hold', t0: note.time + 0.5, t1: note.time + 6, ...rest }], fadeIn: 0.3, fadeOut: 0.6, hits: [note.time] });
+        b.mech.push({ time: note.time + 0.5, kind: 'thud', vel: 0.7, x: rest.x });
         const target = `fin:chime${i}`;
         b.acts.push({ time: note.time, target, notes: [{ pitch: note.pitch, vel: Math.min(1, note.vel + 0.1), dur: Math.max(note.dur, 2.5), inst: ctx.voicing[note.voice] }], x, y: chimeY + 0.08, nx: 0, ny: 1, voice: note.voice, ball: id, label: noteName(note.pitch) });
         b.props.push({
@@ -356,6 +357,7 @@ export const canonFamily: Family = {
       maxSpeed: 40,
       contactTol: 0.03,
       problems: b.problems,
+      mech: b.mech,
       focus(t: number, aspect: number) {
         let k = 0;
         for (let i = 0; i < 4; i++) if (t >= focusStages[i].start) k = i;

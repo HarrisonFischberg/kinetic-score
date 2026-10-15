@@ -102,7 +102,8 @@ export class BuilderScene implements Scene {
       { key: 'sel.sequence', label: 'Advance sequence on each hit', type: 'toggle', applies: 'live', group: 'Selected element', visible: selMusical },
       { key: 'sel.seqStep', label: 'Sequence step (degrees)', type: 'range', min: -5, max: 5, step: 1, applies: 'live', group: 'Selected element', visible: selSeq },
       { key: 'sel.seqLength', label: 'Sequence length', type: 'range', min: 2, max: 8, step: 1, applies: 'live', group: 'Selected element', visible: selSeq },
-      { key: 'preset', label: 'Starting layout', type: 'select', applies: 'restart', group: 'Scene', options: BUILDER_PRESETS.map((p) => ({ value: p.id, label: p.label })), hint: 'Reset restores this layout.' },
+      { key: 'preset', label: 'Starting layout', type: 'select', applies: 'restart', group: 'Scene', options: BUILDER_PRESETS.map((p) => ({ value: p.id, label: p.label })), hint: 'Reset (R) restores the starting layout. Choosing a preset replaces it.' },
+      { key: 'commitLayout', label: 'Use current layout as the start', type: 'button', applies: 'live', group: 'Scene', hint: 'Makes your edits the layout that Reset returns to (it is also saved with your settings)' },
       { key: 'scale', label: 'Scale', type: 'select', applies: 'live', group: 'Music', options: scaleOptions() },
       { key: 'root', label: 'Key', type: 'select', applies: 'live', group: 'Music', options: rootOptions() },
       { key: 'gravity', label: 'Gravity', type: 'range', min: 0, max: 30, step: 0.1, applies: 'live', group: 'Physics' },
@@ -312,6 +313,11 @@ export class BuilderScene implements Scene {
     if (key === 'clearBalls') {
       this.host.world.clearBalls();
       this.svc.trails.clear();
+      return;
+    }
+    if (key === 'commitLayout') {
+      this.baseline = cloneLayout(this.layout);
+      this.svc.notify('Current layout is now the starting layout');
       return;
     }
     if (key === 'undo') return this.undo();

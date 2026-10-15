@@ -311,6 +311,7 @@ export const ringsFamily: Family = {
       ];
       const voice: VoiceRole = run.groups[0].notes.some((n) => n.voice === 'melody') ? 'melody' : 'counter';
       b.balls.push({ id, r: BALL_R, voice, segs, fadeIn: 0.25, fadeOut: 0.45, hits: run.groups.map((g) => g.time) });
+      b.mech.push({ time: k.ts[0], kind: 'whoosh', vel: 0.5, x: 0 });
       run.groups.forEach((g, j) => {
         const ring = k.start + j;
         const R = ringRadius(ring);
@@ -389,6 +390,7 @@ export const ringsFamily: Family = {
       maxSpeed: 20,
       contactTol: 0.02,
       problems: b.problems,
+      mech: b.mech,
     };
   },
 };
