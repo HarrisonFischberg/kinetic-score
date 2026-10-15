@@ -390,8 +390,11 @@ function build(cfg: PieceCfg): ScoreData {
           const pos = (((q(n.tick) - cfg.startQ) % 2) + 2) % 2;
           voice = pos < 1e-3 ? tc.byHalfBar.onBeat : tc.byHalfBar.offBeat;
         } else if (tc.split) {
-          if ('top' in tc.split) voice = i === group.length - 1 ? tc.split.top : tc.split.rest;
-          else voice = i === 0 ? tc.split.bottom : tc.split.rest;
+          // a note only counts as the outer voice if no held note of the same staff sounds beyond it
+          const covered = (above: boolean) =>
+            inRange.some((o) => o !== n && o.tick < n.tick && o.tick + o.durTicks > n.tick + 1 && (above ? o.pitch > n.pitch : o.pitch < n.pitch) && q(o.durTicks) >= cfg.minDurQ);
+          if ('top' in tc.split) voice = i === group.length - 1 && !covered(true) ? tc.split.top : tc.split.rest;
+          else voice = i === 0 && !covered(false) ? tc.split.bottom : tc.split.rest;
         }
         const t = q(n.tick) - cfg.startQ;
         const d = Math.min(q(n.durTicks), cfg.endQ - q(n.tick));

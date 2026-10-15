@@ -4,6 +4,8 @@ import { GrowingBallScene } from '../scenes/generative/growingBall.ts';
 import { CascadeScene } from '../scenes/generative/cascade.ts';
 import { SequencerScene } from '../scenes/generative/sequencer.ts';
 import { ShepardLabScene } from '../scenes/generative/shepardLab.ts';
+import { PerformanceScene } from '../scenes/performance/perfScene.ts';
+import { rainFamily } from '../scenes/performance/rain.ts';
 
 export interface SceneEntry {
   id: string;
@@ -18,6 +20,7 @@ export const SCENES: SceneEntry[] = [
   { id: 'cascade', title: 'Collision Cascade', mode: 'playground', make: () => new CascadeScene() },
   { id: 'sequencer', title: 'Geometric Sequencer', mode: 'playground', make: () => new SequencerScene() },
   { id: 'shepard', title: 'Shepard-Tone Lab', mode: 'playground', make: () => new ShepardLabScene() },
+  { id: 'rain', title: 'Melody Rain', mode: 'performance', make: () => new PerformanceScene(rainFamily) },
 ];
 
 export function sceneEntry(id: string): SceneEntry | undefined {

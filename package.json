@@ -9,7 +9,7 @@
     "build": "npm run typecheck && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.node.json",
-    "test": "node --test --test-reporter=spec tests/",
+    "test": "node --test --test-reporter=spec \"tests/**/*.test.ts\"",
     "build:static": "node scripts/build-static.ts",
     "serve:static": "node scripts/serve.ts",
     "scores": "node scripts/build-scores.ts"
