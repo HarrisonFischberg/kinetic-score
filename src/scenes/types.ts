@@ -130,6 +130,8 @@ export interface Scene {
   pointer?(p: ScenePointer): boolean;
   keydown?(e: KeyboardEvent): boolean;
   bounds(): Bounds;
+  /** camera mode to start in (default overview) */
+  preferredCamera?: 'overview' | 'follow';
   stats?(): [string, string][];
   /** describes looping behaviour honestly */
   loopInfo?(): string;

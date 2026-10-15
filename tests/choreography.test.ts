@@ -35,6 +35,7 @@ for (const f of FAMILIES) {
         for (const a of ch.acts) assert.ok(ids.has(a.target), `missing prop ${a.target}`);
         const rep = validateChoreography(ch.balls, ch.acts, { maxSpeed: ch.maxSpeed, contactTol: ch.contactTol });
         assert.deepEqual(rep.problems.slice(0, 5), [], `maxSpeed=${rep.maxSpeed.toFixed(1)}`);
+        assert.deepEqual((ch.problems ?? []).slice(0, 5), [], 'builder plausibility problems');
         assert.ok(ch.duration >= notes[notes.length - 1].time);
       });
     }

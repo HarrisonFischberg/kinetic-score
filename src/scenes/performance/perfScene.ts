@@ -48,6 +48,8 @@ export interface Choreography {
   maxSpeed: number;
   /** allowed distance between a ball and its activation point beyond its radius */
   contactTol: number;
+  /** plausibility problems detected while building (e.g. a pad the ball would not bounce off) */
+  problems?: string[];
 }
 
 export interface FamilyContext {
@@ -66,6 +68,7 @@ export interface Family {
   defaultSong: string;
   defaultVoicing: string;
   leadIn: number;
+  defaultCamera?: 'overview' | 'follow';
   /** reason this song cannot be performed here, or null */
   supports(score: ScoreData): string | null;
   build(notes: TimedNote[], ctx: FamilyContext): Choreography;
@@ -92,8 +95,11 @@ export class PerformanceScene implements Scene {
   /** problems reported by the last validation */
   validation: string[] = [];
 
+  preferredCamera: 'overview' | 'follow';
+
   constructor(family: Family) {
     this.family = family;
+    this.preferredCamera = family.defaultCamera ?? 'overview';
     this.info = { id: family.id, title: family.title, mode: 'performance', blurb: family.blurb, motion: family.motion };
     this.values = { song: family.defaultSong, tempo: 1, voicing: family.defaultVoicing, guides: true };
     const songOpts: ParamOption[] = allScores().map((s) => {

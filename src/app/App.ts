@@ -321,6 +321,7 @@ export class App {
     this.camera.mode = 'overview';
     this.restart(true);
     this.camera.setBounds(scene.bounds(), true);
+    if (scene.preferredCamera === 'follow') this.camera.setMode('follow');
     this.refreshHeader();
     this.buildPanel();
     this.persist();
@@ -1333,6 +1334,13 @@ export class App {
   worldToClient(x: number, y: number): { x: number; y: number } {
     const r = this.canvas.getBoundingClientRect();
     return { x: r.left + ((x - this.camera.x) / this.camera.width + 0.5) * r.width, y: r.top + (0.5 - (y - this.camera.y) / this.camera.height) * r.height };
+  }
+
+  /** for tests: pause at a given transport time */
+  debugSeek(t: number): void {
+    this.pause();
+    this.transport.seek(t);
+    this.scheduler?.seek(t, this.transport.now());
   }
 
   /** for tests: run a named scene action */
