@@ -36,6 +36,8 @@ export class App {
   private entry!: SceneEntry;
   private scheduler: EventScheduler<PerfEvent> | null = null;
   private perfDuration = 0;
+  private perfLoop = 0;
+  private loopTake: { phase: 'preroll' | 'rolling'; start: number } | null = null;
   private finished = false;
   private silentPreview = true;
   private overlayEl: HTMLElement | null = null;
@@ -277,6 +279,7 @@ export class App {
       seed: () => this.settings.seed,
       notify: (m, k) => this.notify(m, k),
       refreshControls: () => this.renderSceneControls(),
+      timelineChanged: () => this.rebuildTimeline(),
     };
   }
 
@@ -378,6 +381,7 @@ export class App {
 
   private updatePlayButton(): void {
     const playing = this.transport.playing;
+    this.scene?.setPlaying?.(playing);
     this.els.play.textContent = playing ? '❚❚' : '▶';
     this.els.play.setAttribute('aria-label', playing ? 'Pause' : 'Play');
   }
@@ -395,11 +399,33 @@ export class App {
     const perf = this.scene.performance?.() ?? null;
     if (perf) {
       this.perfDuration = perf.duration;
+      this.perfLoop = perf.loop ?? 0;
       this.scheduler = new EventScheduler<PerfEvent>(perf.events, (e, when) => this.playEvent(e, when), 0.15);
-    } else this.scheduler = null;
+    } else {
+      this.scheduler = null;
+      this.perfLoop = 0;
+    }
+    this.transport.setRate(this.timelineRate());
     this.transport.play();
     this.updatePlayButton();
     if (!silentRebuild) this.camera.setMode(this.camera.mode === 'manual' ? 'overview' : this.camera.mode);
+  }
+
+  /** playground timelines follow the sim-speed control; song performances always run at 1× (tempo is a scene setting) */
+  private timelineRate(): number {
+    return this.entry.mode === 'playground' && this.scheduler ? this.settings.simSpeed : 1;
+  }
+
+  private rebuildTimeline(): void {
+    const perf = this.scene.performance?.();
+    if (!perf || !this.scheduler) return;
+    this.perfDuration = perf.duration;
+    this.perfLoop = perf.loop ?? 0;
+    const pos = this.perfLoop ? this.transport.position % this.perfLoop : Math.min(this.transport.position, perf.duration);
+    this.scheduler.setEvents(perf.events);
+    this.transport.seek(pos);
+    this.scheduler.seek(pos, this.transport.now());
+    this.loopTake = null;
   }
 
   private playEvent(e: PerfEvent, when: number): Cancellable[] {
@@ -423,6 +449,10 @@ export class App {
 
   private setSimSpeed(v: number): void {
     this.settings.simSpeed = clamp(v, 0.1, 4);
+    if (this.scheduler && this.entry.mode === 'playground') {
+      this.transport.setRate(this.timelineRate());
+      this.scheduler.seek(this.transport.position, this.transport.now());
+    }
     this.persist();
   }
 
@@ -448,9 +478,15 @@ export class App {
     const dl = this.renderer.draw;
     const app = this.settings.appearance;
     let t = this.transport.position;
-    if (this.entry.mode === 'performance') {
-      this.scheduler?.tick(this.transport);
-      if (this.transport.playing && t >= this.perfDuration) {
+    if (this.scheduler) {
+      this.scheduler.tick(this.transport);
+      if (this.transport.playing && this.perfLoop && t >= this.perfDuration) {
+        // exact periodic timeline: wrapping by whole loops is seamless
+        const wrapped = t - Math.floor(t / this.perfLoop) * this.perfLoop;
+        this.transport.seek(wrapped);
+        this.scheduler.seek(wrapped, this.transport.now());
+        t = wrapped;
+      } else if (this.transport.playing && t >= this.perfDuration) {
         if (this.silentPreview && this.overlayEl) this.restart(true);
         else {
           this.transport.pause();
@@ -480,6 +516,7 @@ export class App {
     dl.end();
     this.renderer.render(this.camera, nowMs / 1000);
     this.els.time.textContent = this.entry.mode === 'performance' ? `${fmtTime(t)} / ${fmtTime(this.perfDuration)}` : fmtTime(t);
+    this.loopTakeTick();
     this.recordingTick(t);
   }
 
@@ -491,7 +528,7 @@ export class App {
     const perf = this.scene.performance?.();
     if (app.showTitle) {
       const x = -aspect + 0.07;
-      if (perf) {
+      if (perf && perf.songId) {
         const s = allScores().find((x) => x.id === perf.songId);
         if (s) {
           dl.text(s.title, x, 0.9, 0.075, pal.text, 0.92, 'left', 'hud');
@@ -853,7 +890,7 @@ export class App {
       { key: 'res', label: 'Resolution', type: 'select', applies: 'live', options: [{ value: 'hd', label: '720p (fast)' }, { value: 'fhd', label: '1080p (sharper, heavier)' }] },
       { key: 'fps', label: 'Frame rate', type: 'select', applies: 'live', options: [{ value: '30', label: '30 fps' }, { value: '60', label: '60 fps (if the browser keeps up)' }] },
       { key: 'framePreview', label: 'Preview the export frame', type: 'toggle', applies: 'live', hint: 'Letterboxes the stage to the export frame. Always on while recording.' },
-      { key: 'mode', label: 'Take', type: 'select', applies: 'live', options: [{ value: 'manual', label: 'Manual start / stop' }, { value: 'timed', label: 'Timed' }, { value: 'performance', label: 'Whole performance from the start', disabled: this.entry.mode === 'performance' ? undefined : 'performance scenes only' }] },
+      { key: 'mode', label: 'Take', type: 'select', applies: 'live', options: [{ value: 'manual', label: 'Manual start / stop' }, { value: 'timed', label: 'Timed' }, { value: 'performance', label: 'Whole performance from the start', disabled: this.entry.mode === 'performance' ? undefined : 'performance scenes only' }, { value: 'loop', label: 'One seamless loop', disabled: this.perfLoop ? undefined : 'looping sequencer scenes only' }] },
       { key: 'timedSeconds', label: 'Timed length', type: 'range', min: 3, max: 120, step: 1, unit: 's', applies: 'live', visible: () => ex.mode === 'timed' },
       { key: 'tail', label: 'Ending tail', type: 'range', min: 0, max: 6, step: 0.5, unit: 's', applies: 'live', visible: () => ex.mode === 'performance', hint: 'Keeps recording after the final note so it can ring out' },
       { key: 'countdown', label: '3-2-1 countdown', type: 'toggle', applies: 'live' },
@@ -1098,14 +1135,17 @@ export class App {
   // ------------------------------------------------------------------ recording
 
   private async toggleRecord(): Promise<void> {
-    if (this.recorder.recording || this.countdownTimer) return this.stopRecording();
+    if (this.recorder.recording || this.countdownTimer || this.loopTake) return this.stopRecording();
     const sup = recordingSupport();
     if (!sup.ok) return this.notify(sup.reason ?? 'Recording unsupported', 'warn');
     if (!this.audio.running && this.audio.supported) await this.enableAudio(false);
-    const mode = this.settings.export.mode === 'performance' && this.entry.mode !== 'performance' ? 'manual' : this.settings.export.mode;
+    let mode = this.settings.export.mode;
+    if (mode === 'performance' && this.entry.mode !== 'performance') mode = 'manual';
+    if (mode === 'loop' && !this.perfLoop) mode = 'manual';
     this.recordingSize = this.exportSize();
     this.layout();
     this.root.classList.add('recording');
+    this.refreshHeader();
     if (mode === 'performance') {
       // reset to the start and hold until the countdown ends
       this.restart(true);
@@ -1114,6 +1154,13 @@ export class App {
     const go = () => {
       this.countdownTimer = 0;
       this.countdownEl.classList.remove('on');
+      if (mode === 'loop') {
+        // pre-roll one full loop (so ringing tails match at the seam), then record exactly one loop
+        this.restart(true);
+        this.loopTake = { phase: 'preroll', start: this.perfLoop };
+        this.notify(`Pre-rolling one loop (${this.perfLoop.toFixed(1)} s) before recording…`);
+        return;
+      }
       this.beginRecording(mode);
     };
     if (this.settings.export.countdown) {
@@ -1132,10 +1179,23 @@ export class App {
     } else go();
   }
 
-  private beginRecording(mode: 'manual' | 'timed' | 'performance'): void {
+  private loopTakeTick(): void {
+    const lt = this.loopTake;
+    if (!lt) return;
+    const pos = this.transport.position;
+    if (lt.phase === 'preroll' && pos >= lt.start) {
+      lt.phase = 'rolling';
+      this.beginRecording('loop');
+    } else if (lt.phase === 'rolling' && pos >= lt.start + this.perfLoop) {
+      this.loopTake = null;
+      this.stopRecording();
+    }
+  }
+
+  private beginRecording(mode: 'manual' | 'timed' | 'performance' | 'loop'): void {
     const [w, h2] = this.recordingSize!;
     const perf = this.scene.performance?.();
-    const base = `kinetic-score_${this.entry.id}${perf ? '_' + perf.songId : ''}`;
+    const base = `kinetic-score_${this.entry.id}${perf?.songId ? '_' + perf.songId : ''}${mode === 'loop' ? '_loop' : ''}`;
     const err = this.recorder.start(this.canvas, this.audio.recordingStream, this.settings.export.fps, w, h2, base);
     if (err) {
       this.notify(err, 'warn');
@@ -1165,6 +1225,12 @@ export class App {
   }
 
   private stopRecording(): void {
+    if (this.loopTake && !this.recorder.recording) {
+      this.loopTake = null;
+      this.afterRecording();
+      return;
+    }
+    this.loopTake = null;
     if (this.countdownTimer) {
       clearTimeout(this.countdownTimer);
       this.countdownTimer = 0;
@@ -1261,6 +1327,17 @@ export class App {
     this.recorder.dispose();
     this.scene?.dispose();
     this.renderer?.dispose();
+  }
+
+  /** world → client (CSS px) coordinates, for automated interaction tests */
+  worldToClient(x: number, y: number): { x: number; y: number } {
+    const r = this.canvas.getBoundingClientRect();
+    return { x: r.left + ((x - this.camera.x) / this.camera.width + 0.5) * r.width, y: r.top + (0.5 - (y - this.camera.y) / this.camera.height) * r.height };
+  }
+
+  /** for tests: run a named scene action */
+  debugScene(): Scene {
+    return this.scene;
   }
 
   // test/debug hooks (used by the browser smoke test)

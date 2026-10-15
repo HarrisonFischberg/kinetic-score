@@ -41,6 +41,7 @@ export class PhysicsHost {
   }
 
   stepOnce(): void {
+    if ((this.world.stepCount & 1023) === 1023) this.pruneCooldowns();
     this.onStep(FIXED_DT);
     this.world.step(FIXED_DT);
     this.simTime += FIXED_DT;
@@ -75,6 +76,11 @@ export class PhysicsHost {
     let n = 0;
     for (const b of this.world.balls) if (ballVisual(b).fadeOut <= 0) n++;
     return n;
+  }
+
+  private pruneCooldowns(): void {
+    for (const [k, t] of this.elementCooldowns) if (this.simTime - t > 6) this.elementCooldowns.delete(k);
+    for (const [k, t] of this.lastMech) if (this.simTime - t > 6) this.lastMech.delete(k);
   }
 
   /** Throttle per key (element) — returns true if allowed now. */

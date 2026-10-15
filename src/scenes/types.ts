@@ -64,6 +64,8 @@ export interface SceneServices {
   notify(msg: string, kind?: 'info' | 'warn'): void;
   /** request the panel to re-render scene controls (e.g. after selection changes) */
   refreshControls(): void;
+  /** a timeline scene changed its events: reschedule from the current position */
+  timelineChanged?(): void;
 }
 
 export interface SceneInfo {
@@ -108,6 +110,8 @@ export interface PerformanceInfo {
   events: PerfEvent[];
   /** current phrase label at time t, for the title overlay */
   phraseAt(t: number): string;
+  /** the timeline repeats exactly with this period (seconds) */
+  loop?: number;
 }
 
 export interface Scene {
@@ -130,6 +134,8 @@ export interface Scene {
   /** describes looping behaviour honestly */
   loopInfo?(): string;
   performance?(): PerformanceInfo | null;
+  /** transport started or stopped (continuous engines use this to fade in/out) */
+  setPlaying?(playing: boolean): void;
   /** safe randomisation of scene parameters (seed already changed by the app) */
   randomize?(rand: () => number): void;
   dispose(): void;

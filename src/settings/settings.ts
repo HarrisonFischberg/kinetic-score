@@ -12,7 +12,7 @@ export interface ExportSettings {
   aspect: AspectId;
   /** letterbox the live preview to the export frame (always on while recording) */
   framePreview: boolean;
-  mode: 'manual' | 'timed' | 'performance';
+  mode: 'manual' | 'timed' | 'performance' | 'loop';
   timedSeconds: number;
   res: ResId;
   fps: 30 | 60;
@@ -111,7 +111,7 @@ export function sanitizeSettings(raw: unknown): { settings: AppSettings; warning
   if (ex && typeof ex === 'object') {
     if (['portrait', 'square', 'landscape'].includes(ex.aspect as string)) s.export.aspect = ex.aspect as AspectId;
     if (typeof ex.framePreview === 'boolean') s.export.framePreview = ex.framePreview;
-    if (ex.mode === 'manual' || ex.mode === 'timed' || ex.mode === 'performance') s.export.mode = ex.mode;
+    if (ex.mode === 'manual' || ex.mode === 'timed' || ex.mode === 'performance' || ex.mode === 'loop') s.export.mode = ex.mode;
     if (isNum(ex.timedSeconds, 1, 600)) s.export.timedSeconds = ex.timedSeconds;
     if (ex.res === 'hd' || ex.res === 'fhd') s.export.res = ex.res;
     if (ex.fps === 30 || ex.fps === 60) s.export.fps = ex.fps;
