@@ -282,11 +282,13 @@ type AvResult = { expected: number; matched: number; median: number; p95: number
 const AV_BODY = `return (async () => {
       k.settings.audio.ambience = false;
       k.settings.audio.mech = 0;
+      const savedInst = { ...k.settings.audio.inst };
+      if (a.solo) for (const id of Object.keys(k.settings.audio.inst)) k.settings.audio.inst[id] = id === a.solo ? 0.8 : 0;
       k.applyAudioSettings();
       k.switchScene(a.scene);
       const sc = k.debugScene();
       sc.values.song = a.song;
-      sc.values.voicing = 'mallets';
+      sc.values.voicing = a.voicing || 'mallets';
       sc.values.tempo = 1;
       k.restart();
       Object.assign(k.settings.export, { aspect: 'landscape', res: 'hd', countdown: false, mode: 'performance', tail: 1 });
@@ -302,6 +304,8 @@ const AV_BODY = `return (async () => {
         if (k.recorder.last && k.recorder.last.url !== first) rec = k.recorder.last;
       }
       if (!rec) return { err: 'no recording' };
+      Object.assign(k.settings.audio.inst, savedInst);
+      k.applyAudioSettings();
       const ac = new AudioContext();
       const buf = await ac.decodeAudioData(await rec.blob.arrayBuffer());
       const ch = buf.getChannelData(0);
@@ -326,7 +330,7 @@ const AV_BODY = `return (async () => {
       }
       // expected note-group times inside the recorded window
       const perf = sc.performance();
-      const exp = [...new Set(perf.events.filter((e) => e.notes.length).map((e) => Math.round(e.time * 1000) / 1000))].filter((t) => t < buf.duration - 0.3);
+      const exp = [...new Set(perf.events.filter((e) => e.notes.length && (!a.solo || e.notes.some((n) => n.inst === a.solo))).map((e) => Math.round(e.time * 1000) / 1000))].filter((t) => t < buf.duration - 0.3);
       // best constant offset (recording start vs performance start)
       let best = { off: 0, n: -1 };
       for (let off = -1.5; off <= 1.5; off += 0.002) {
@@ -469,6 +473,16 @@ await check('recorded audio (Canon Contraption): onsets match and the ground bas
   const ok = r.pitches.filter((p, i) => p === bass[i] || p === bass[i] + 12 || p === bass[i] - 12).length;
   const detail = `onsets ${r.matched}/${r.expected} within ±30 ms (jitter median ${r.median.toFixed(1)} ms, 95th ${r.p95.toFixed(1)} ms); first eight pitches ${r.pitches.join(' ')} (${ok}/8 = D3 A2 B2 F♯2 G2 D2 G2 A2, octave-tolerant)`;
   if (r.matched < r.expected * 0.8 || r.p95 > 15 || ok < 7) throw new Error(detail);
+  return detail;
+});
+
+await check('recorded audio (Ode to Joy, melody soloed): the melody pitches are B B C D D C B A', async () => {
+  const r = await ks<AvResult | null>(page, AV_BODY, { scene: 'rain', song: 'ode-to-joy', voicing: 'classic', solo: 'bell', fMin: 150, video: false, secs: 8 });
+  if (!r || r.err) throw new Error(r?.err ?? 'no result');
+  const mel = [71, 71, 72, 74, 74, 72, 71, 69];
+  const ok = r.pitches.filter((p, i) => p === mel[i] || p === mel[i] + 12 || p === mel[i] - 12).length;
+  const detail = `melody onsets ${r.matched}/${r.expected} within ±30 ms (jitter median ${r.median.toFixed(1)} ms); first eight melody pitches ${r.pitches.join(' ')} (${ok}/8 = B4 B4 C5 D5 D5 C5 B4 A4, octave-tolerant)`;
+  if (r.matched < r.expected * 0.8 || ok < 7) throw new Error(detail);
   return detail;
 });
 

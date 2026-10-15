@@ -266,7 +266,7 @@ Third-party code: three.js r186 and its type definitions (MIT, vendored in `vend
 - `node scripts/browser-check.ts` — headless Chromium (software WebGL, fake audio device),
   including an analysis of recorded takes: note onsets decoded from the files match the score
   with ~1.5 ms median jitter, and the pitches detected in the files are exactly Für Elise's
-  opening motif and the Canon's ground bass. See
+  opening motif, the Ode to Joy melody and the Canon's ground bass. See
   [docs/VERIFICATION.md](docs/VERIFICATION.md) for the list, the latest results and the manual
   checklist for things that need real eyes, ears and devices.
 

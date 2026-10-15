@@ -53,6 +53,15 @@ was done and what was actually run/verified.
   errors. Follow-camera snap on start, aspect-aware stage framing, wrapping mobile header.
   README and docs/VERIFICATION.md written.
 
+- 8: gap pass against the brief: wired the dead "guide paths" control (look-ahead dots), quiet
+  mechanical sounds in performances, builder "use current layout as start", validated score-JSON
+  import, Orbital Classics sandbox mode (free physics, growing on impact), restart guarded during
+  takes. Found and fixed a real bug: loading a project discarded its scene values and crashed for
+  Builder projects (new layout round-trip check).
+- 9: objective AV checks on recorded files: decoded audio onsets vs score (≈1.4 ms median jitter),
+  YIN pitch of the openings of Für Elise, Ode to Joy (melody soloed) and the Canon ground bass —
+  all exact; video flash vs audio bounded by the headless frame rate. Browser suite 32/32.
+
 ## Song support per scene (computed by each family, also shown in the Song menu)
 - Canon Contraption, Melody Rain, Musical Maze: all 8 excerpts.
 - Orbital Classics: Prelude, Canon, Für Elise, Ode to Joy, Mountain King. Disabled (leaps too fast
