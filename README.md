@@ -17,6 +17,8 @@ microphone or camera. All sound is synthesised live with the Web Audio API.
 
 ## Run it
 
+**Live site:** once GitHub Pages is enabled (Settings → Pages → Source: GitHub Actions), every push to `main` is built and published by `.github/workflows/pages.yml` at https://harrisonfischberg.github.io/kinetic-score/.
+
 Requires Node.js **22.18 or newer** (the build scripts are TypeScript run directly by Node).
 
 ### Normal setup (Vite)
