@@ -169,10 +169,9 @@ export class ShepardLabScene implements Scene {
     const pal = svc.palette();
     const now = this.host.simTime;
     const s = this.settings;
-    const ph = this.phase.phase;
     // drive the audio engine from the same phase the visuals use
-    svc.shepard.update(ph, s, this.values.on === true && this.playing && svc.audio.running);
-    const layers = shepardLayers(ph, Math.max(2, Math.round(s.layers)), s.fMin, this.layerBuf);
+    svc.shepard.update(this.phase.total, s, this.values.on === true && this.playing && svc.audio.running);
+    const layers = shepardLayers(this.phase.total, Math.max(2, Math.round(s.layers)), s.fMin, this.layerBuf);
     // pitch helix: one ring per layer, radius by log-frequency position, brightness by loudness
     for (const l of layers) {
       const r = 1.2 + l.x * (this.R - 1.6);

@@ -182,10 +182,17 @@ synthetic room send (Ambience). A 40-voice limit steals the oldest voice. Mechan
 the playground make quiet filtered-noise ticks (its own volume). **Mute** silences the speakers
 only; recordings still contain the mix.
 
-The Shepard engine uses N octave-spaced oscillators sharing one phase; each layer's loudness is a
+The Shepard engine uses N octave-spaced layers sharing one phase; each layer's loudness is a
 raised-cosine window over log-frequency that is exactly zero where a layer wraps, and the window
-sum is constant (N/2), so the total level never pumps. Tests check octave spacing, the window,
-constant level and phase continuity. Whether the illusion is convincing depends on ears and
+sum is constant (N/2), so the total level never pumps. Each layer sits at (i + unwrapped phase) mod N
+octaves, so layers glide continuously and only the silent top layer ever jumps to the bottom. The
+tone is synthesised sample by sample in an AudioWorklet (phase, window and oscillator phase per
+sample — nothing stepped at the frame rate); if AudioWorklet is unavailable (e.g. a plain-http LAN
+address) it falls back to per-frame oscillator automation. Tests check octave spacing, the window,
+constant level, per-layer continuity across phase wraps and the worklet's own output. An offline
+spectral-flux comparison of the worklet output showed no spikes at the wraps (max 2.5× the median
+frame-to-frame change), whereas reintroducing the old per-octave layer re-indexing produced
+13.7× spikes — the "zip" reported in real use and fixed in iteration 15. Whether the illusion is convincing depends on ears and
 speakers; it was **not** auditioned in this build environment.
 
 ## Recording & export

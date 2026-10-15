@@ -3,10 +3,10 @@
 ## Automated
 
 ### Unit tests — `npm test` (or `node --test "tests/**/*.test.ts"`)
-102 tests, all passing at the time of writing. Coverage: score data and validation, timing,
+104 tests, all passing at the time of writing. Coverage: score data and validation, timing,
 choreography plausibility for every performance family × supported song × tempo (1.0, 0.8),
 maze door timing, physics determinism/tunnelling/retrigger/sensors, stepper cap, safe spawning,
-transport and scheduler (pause/resume/seek/reset, no duplicates or reordering), Shepard maths,
+transport and scheduler (pause/resume/seek/reset, no duplicates or reordering), Shepard maths (incl. per-layer continuity across phase wraps and the worklet's per-sample output),
 settings/project/layout validation, harmony guide (chord tones, leap size, pile-up thinning), sequencer loop length, MIDI parsing.
 
 ### Install and build
@@ -35,7 +35,7 @@ and the default virtual audio device. Latest run: **33/33 passed, 0 console erro
 | Harmony guide: busy Builder (5 balls/s) — every note is a tone of the chord shown at that moment, ≤3 notes per 0.12 s, no melodic leap > 7 semitones | pass (43 notes) |
 | Cascade: population never exceeds the cap (cap 12, aggressive spawning) | pass |
 | Growing ball: size stays within the limit | pass |
-| Shepard lab: direction control reverses the phase | pass |
+| Shepard lab: direction control reverses the phase; synthesis runs in the per-sample AudioWorklet | pass |
 | Sequencer: timeline wraps seamlessly at the end | pass |
 | Recording: 3 s timed take → WebM, 720×1280, extension matches MIME, audio track decodes, preview size restored | pass |
 | Recording: second take (square 720×720) | pass |

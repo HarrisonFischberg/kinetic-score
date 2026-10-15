@@ -4,7 +4,7 @@ import { World, worldHash, FIXED_DT } from '../src/simulation/physics.ts';
 import { Stepper } from '../src/simulation/stepper.ts';
 import { Rng } from '../src/core/rng.ts';
 import { EventScheduler, Transport } from '../src/transport/transport.ts';
-import { ShepardPhase, shepardLayers, defaultShepard } from '../src/audio/shepard.ts';
+import { ShepardPhase, shepardLayers, defaultShepard, WORKLET_SOURCE } from '../src/audio/shepard.ts';
 import { sanitizeSettings, validateProject, defaultSettings } from '../src/settings/settings.ts';
 import { validateLayout } from '../src/scenes/builder/layout.ts';
 import { BUILDER_PRESETS } from '../src/scenes/builder/presets.ts';
@@ -182,6 +182,68 @@ test('shepard: octave spacing, zero-at-edges window, constant total level', () =
   const top = before.reduce((a, b) => (b.freq > a.freq ? b : a));
   const bottom = after.reduce((a, b) => (b.freq < a.freq ? b : a));
   assert.ok(top.amp < 1e-6 && bottom.amp < 1e-6);
+});
+
+test('shepard: each layer glides continuously; only a silent layer ever jumps (no octave "zip")', () => {
+  for (const n of [3, 7, 10]) {
+    let prev = shepardLayers(0, n, 41.2).map((l) => ({ ...l }));
+    for (let k = 1; k <= 4000; k++) {
+      const cur = shepardLayers(k * 0.001, n, 41.2); // 4 octaves of rise, crossing several phase wraps
+      cur.forEach((l, i) => {
+        const ratio = l.freq / prev[i].freq;
+        if (Math.abs(ratio - 1) > 0.01) assert.ok(prev[i].amp < 1e-4 && l.amp < 1e-4, `layer ${i} jumped ×${ratio.toFixed(3)} while audible (n=${n})`);
+      });
+      prev = cur.map((l) => ({ ...l }));
+    }
+  }
+});
+
+test('shepard worklet: per-sample synthesis never changes an audible layer\'s pitch abruptly', () => {
+  // load the processor source with a minimal AudioWorkletGlobalScope stand-in
+  let Proc: any;
+  const scope = { sampleRate: 48000, currentTime: 0 };
+  new Function('AudioWorkletProcessor', 'registerProcessor', 'sampleRate', 'globalThis_', WORKLET_SOURCE.replace(/currentTime/g, 'globalThis_.currentTime'))(
+    class { port = { onmessage: null as unknown } },
+    (_: string, c: unknown) => (Proc = c),
+    scope.sampleRate,
+    scope,
+  );
+  const p = new Proc();
+  const sr = scope.sampleRate;
+  const block = 128;
+  const out = [new Float32Array(block)];
+  let total = 0;
+  const rate = 6 / 12; // octaves per second (fast, to cross several wraps)
+  let prevTheta: number[] | null = null;
+  let prevCur = 0;
+  let maxAbs = 0;
+  const frames = Math.round(5 * 60);
+  for (let f = 0; f < frames; f++) {
+    p.port.onmessage({ data: { total, rate, time: scope.currentTime, n: 7, fMin: 41.2, brightness: 0.35 } });
+    // ~one animation frame of audio, in 128-sample blocks, checking each layer's frequency per block
+    for (let b = 0; b < Math.round(sr / 60 / block); b++) {
+      p.process([], [out]);
+      scope.currentTime += block / sr;
+      const theta = Array.from(p.theta as Float64Array);
+      for (const v of out[0]) maxAbs = Math.max(maxAbs, Math.abs(v));
+      if (prevTheta) {
+        for (let i = 0; i < 7; i++) {
+          // last-sample frequency of layer i vs the expected position from the glide state
+          const pos = (((i + p.cur) % 7) + 7) % 7;
+          const posPrev = (((i + prevCur) % 7) + 7) % 7;
+          const amp = 0.5 - 0.5 * Math.cos((2 * Math.PI * pos) / 7);
+          const jump = Math.abs(pos - posPrev);
+          if (jump > 0.05) assert.ok(amp < 0.01, `layer ${i} moved ${jump.toFixed(2)} octaves in one block while audible (amp ${amp.toFixed(3)})`);
+        }
+      }
+      prevTheta = theta;
+      prevCur = p.cur;
+    }
+    total += rate / 60;
+  }
+  // the glide tracked the visual phase (within a few frames of lag) and produced sound
+  assert.ok(Math.abs(p.cur - total) % 1 < 0.05 || Math.abs(p.cur - total) % 1 > 0.95, `cur ${p.cur} vs ${total}`);
+  assert.ok(maxAbs > 0.05 && maxAbs <= 1.0001, `output peak ${maxAbs}`);
 });
 
 test('shepard: phase is continuous in both modes (no jumps)', () => {

@@ -83,7 +83,15 @@ was done and what was actually run/verified.
   notes all chord tones, ≤3 per 0.12 s, no leap > a fifth; full browser suite 33/33, 0 console
   errors. Whether it *sounds* good is for the owner's ears.
 
-Iterations used: 14 of 40.
+- 15: Shepard "zip" reported by the owner: every layer was re-indexed down an octave at each phase
+  wrap and the per-frame automation turned that into a 30 ms downward sweep. Fix: layers indexed by
+  the unwrapped phase (only the silent top layer wraps) + per-sample AudioWorklet synthesis
+  (fallback: corrected per-frame automation). Verified: 2 new unit tests (104/104); offline
+  spectral flux of the worklet output — fixed max 2.5× median vs 13.7× with the old indexing put
+  back; Chromium uses the worklet; browser suite 33/33. (Headless live capture was unusable for
+  this: its audio thread dropped render quanta for both old and new builds.) Not auditioned.
+
+Iterations used: 15 of 40.
 
 ## Song support per scene (computed by each family, also shown in the Song menu)
 - Canon Contraption, Melody Rain, Musical Maze: all 8 excerpts.

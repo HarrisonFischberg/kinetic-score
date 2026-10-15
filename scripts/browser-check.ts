@@ -213,8 +213,10 @@ await check('shepard lab: direction control reverses the phase', async () => {
   await page.waitForTimeout(1200);
   const t4 = await stat(page, 'Turns');
   await page.screenshot({ path: join(outDir, '06-shepard.png') });
+  const backend = await ks<string>(page, 'return k.shepard.backend');
   if (!(t2 > t1 && t4 < t3)) throw new Error(`turns ${t1} ${t2} ${t3} ${t4}`);
-  return `rising ${t1}→${t2}, falling ${t3}→${t4}`;
+  if (backend !== 'worklet') throw new Error(`synthesis backend ${backend} (expected the per-sample worklet)`);
+  return `rising ${t1}→${t2}, falling ${t3}→${t4}; synthesis: ${backend}`;
 });
 
 await check('sequencer: timeline wraps seamlessly at the end', async () => {
