@@ -314,6 +314,19 @@ await check('persistence: a saved project survives a reload and loads back', asy
   return `found=${r.found} palette=${r.palette} scene=${r.scene}`;
 });
 
+await check('orbital sandbox: free-physics mode plays the song’s chimes and grows marbles', async () => {
+  await ks(page, "k.switchScene('orbital'); k.setSceneParam('mode', 'sandbox');");
+  await page.waitForTimeout(9000);
+  const s = await state(page);
+  const notes = await stat(page, 'Notes');
+  await page.screenshot({ path: join(outDir, '10-orbital-sandbox.png') });
+  const motion = await page.locator('.badge').textContent();
+  await ks(page, "k.setSceneParam('mode', 'performance');");
+  if (!(notes >= 2)) throw new Error(`notes=${notes}`);
+  if (!String(motion).toLowerCase().includes('sandbox')) throw new Error(`badge: ${motion}`);
+  return `notes=${notes} marbles=${JSON.stringify(s.stats)} badge="${motion}"`;
+});
+
 await check('score import: validated JSON becomes a playable song; hostile JSON is rejected', async () => {
   const ode = await page.evaluate(async () => (await fetch('./scores/ode-to-joy.json')).json());
   const r = await ks<{ ok: string; bad: string; song: unknown; scene: unknown }>(

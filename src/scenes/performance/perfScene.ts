@@ -63,7 +63,17 @@ export interface FamilyContext {
   tempo: number;
 }
 
+/** free-physics, interpretive variant of a family (optional) */
+export interface SandboxSim {
+  update(dt: number): void;
+  render(dl: DrawList): void;
+  stats(): [string, string][];
+  dispose(): void;
+}
+
 export interface Family {
+  /** optional sandbox (free physics) variant offered next to the choreographed performance */
+  sandbox?: { label: string; motion: string; make(score: ScoreData, voicing: Voicing, svc: SceneServices, seed: number): SandboxSim };
   id: string;
   title: string;
   blurb: string;
@@ -80,7 +90,12 @@ export interface Family {
 const LONG_TAIL = 2.5;
 
 export class PerformanceScene implements Scene {
-  readonly info: Scene['info'];
+  private baseInfo: Scene['info'];
+  get info(): Scene['info'] {
+    if (this.values?.mode === 'sandbox' && this.family.sandbox) return { ...this.baseInfo, motion: this.family.sandbox.motion };
+    return this.baseInfo;
+  }
+  private sandbox: SandboxSim | null = null;
   readonly params: ParamDef[];
   values: Record<string, ParamValue>;
   private svc!: SceneServices;
@@ -103,14 +118,17 @@ export class PerformanceScene implements Scene {
   constructor(family: Family) {
     this.family = family;
     this.preferredCamera = family.defaultCamera ?? 'overview';
-    this.info = { id: family.id, title: family.title, mode: 'performance', blurb: family.blurb, motion: family.motion };
-    this.values = { song: family.defaultSong, tempo: 1, voicing: family.defaultVoicing, guides: true };
+    this.baseInfo = { id: family.id, title: family.title, mode: 'performance', blurb: family.blurb, motion: family.motion };
+    this.values = { song: family.defaultSong, tempo: 1, voicing: family.defaultVoicing, guides: true, mode: 'performance' };
     const songOpts: ParamOption[] = allScores().map((s) => {
       const reason = family.supports(s);
       return { value: s.id, label: `${s.title} — ${s.composer.split(' ').slice(-1)[0]}${s.priority ? '' : ''}`, disabled: reason ?? undefined };
     });
     for (const u of UNAVAILABLE) songOpts.push({ value: `unavailable:${u.title}`, label: u.title.split('—')[1]?.trim().split(',')[0] ?? u.title, disabled: 'no verified public-domain source bundled' });
     this.params = [
+      ...(family.sandbox
+        ? [{ key: 'mode', label: 'Mode', type: 'select' as const, applies: 'restart' as const, group: 'Performance', options: [{ value: 'performance', label: 'Performance — choreographed to the score' }, { value: 'sandbox', label: family.sandbox.label }], hint: 'Sandbox is free physics using the song’s pitches (interpretive, not the score’s timing)' }]
+        : []),
       { key: 'song', label: 'Song', type: 'select', applies: 'restart', options: songOpts, group: 'Performance' },
       { key: 'tempo', label: 'Tempo', type: 'range', min: 0.6, max: 1.4, step: 0.05, unit: '×', applies: 'restart', group: 'Performance', hint: 'Rebuilds the machine timing; pitch is unchanged. Applies on restart (R).' },
       { key: 'voicing', label: 'Instruments', type: 'select', applies: 'restart', group: 'Performance', options: Object.entries(VOICINGS).map(([value, v]) => ({ value, label: v.label })) },
@@ -142,6 +160,13 @@ export class PerformanceScene implements Scene {
     const leadIn = this.family.leadIn;
     const notes = timeNotes(score, tempo, leadIn);
     const voicing = (VOICINGS[String(this.values.voicing)] ?? VOICINGS.classic).v;
+    this.sandbox?.dispose();
+    this.sandbox = null;
+    if (this.values.mode === 'sandbox' && this.family.sandbox) {
+      this.sandbox = this.family.sandbox.make(score, voicing, this.svc, this.svc.seed());
+      this.svc.trails.clear();
+      this.svc.particles.clear();
+    }
     const ch = this.family.build(notes, { voicing, rng: new Rng(this.svc.seed() ^ 0x5bd1e995), leadIn, score, tempo });
     this.choreo = ch;
     ch.acts.sort((a, b) => a.time - b.time);
@@ -170,10 +195,12 @@ export class PerformanceScene implements Scene {
     return this.choreo;
   }
 
-  update(): void {}
+  update(dt: number): void {
+    this.sandbox?.update(dt);
+  }
 
   onParam(key: string): void {
-    if (key === 'song') this.build();
+    if (key === 'song' || key === 'mode') this.build();
   }
 
   bounds(): Bounds {
@@ -181,7 +208,7 @@ export class PerformanceScene implements Scene {
   }
 
   performance(): PerformanceInfo | null {
-    if (!this.choreo || !this.score) return null;
+    if (this.sandbox || !this.choreo || !this.score) return null;
     const last = this.events.length ? this.events[this.events.length - 1].time : 0;
     const tail = Math.max(LONG_TAIL, ...this.events.slice(-8).flatMap((e) => e.notes.map((n) => n.dur)));
     return {
@@ -215,6 +242,10 @@ export class PerformanceScene implements Scene {
   }
 
   render(dl: DrawList, t: number): void {
+    if (this.sandbox) {
+      this.sandbox.render(dl);
+      return;
+    }
     const ch = this.choreo;
     if (!ch) return;
     const ctx = this.ctx();
@@ -322,6 +353,7 @@ export class PerformanceScene implements Scene {
   }
 
   stats(): [string, string][] {
+    if (this.sandbox) return this.sandbox.stats();
     const n = this.events.reduce((s, e) => s + e.notes.length, 0);
     return [
       ['Notes', String(n)],
@@ -331,8 +363,12 @@ export class PerformanceScene implements Scene {
   }
 
   loopInfo(): string {
+    if (this.values.mode === 'sandbox') return 'Sandbox — free physics, not a loop; Restart (same seed) replays the same opening.';
     return 'Choreographed performance — deterministic: restart replays it identically, and every note is struck by a visible mechanism at its score time. Not a loop.';
   }
 
-  dispose(): void {}
+  dispose(): void {
+    this.sandbox?.dispose();
+    this.sandbox = null;
+  }
 }

@@ -344,7 +344,7 @@ export class App {
     if (this.isLocked(def)) return this.notify('This setting is locked while recording.', 'warn');
     if (def.type !== 'button') this.scene.values[key] = value;
     this.scene.onParam?.(key);
-    if (key === 'song') {
+    if (key === 'song' || (key === 'mode' && this.entry.mode === 'performance')) {
       this.restart();
       this.refreshHeader();
       this.buildPanel();
@@ -525,7 +525,7 @@ export class App {
     this.camera.update(dt);
     dl.end();
     this.renderer.render(this.camera, nowMs / 1000);
-    this.els.time.textContent = this.entry.mode === 'performance' ? `${fmtTime(t)} / ${fmtTime(this.perfDuration)}` : fmtTime(t);
+    this.els.time.textContent = this.scheduler && !this.perfLoop ? `${fmtTime(t)} / ${fmtTime(this.perfDuration)}` : fmtTime(t);
     this.loopTakeTick();
     this.recordingTick(t);
   }

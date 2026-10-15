@@ -106,7 +106,7 @@ backwards from the score* so every contact lands on its note. The app says so in
 | **Canon Contraption** (flagship) | Pachelbel, Canon in D | Four stacked stages + finale bowl: hopper release gates, chime stairs, rotary bell hammer & bell tower, paddle wheel, tuned pegboard, seesaw launcher (tipped by a messenger marble), guided spiral, drip hoppers, pendulum hammers, funnel, branching accompaniment lane, pin wheel, final bowl. Camera follows stage by stage. |
 | **Melody Rain** | Beethoven, Für Elise | Timed drops from a dispenser rail onto two tuned keyboards (melody / accompaniment); chords fall together. |
 | **Musical Maze** | Mozart, Rondo alla turca | Two seeded perfect mazes; marbles tour every corridor at constant speed through note gates; timed doors open only as a marble passes. |
-| **Orbital Classics** | Bach, Prelude in C (BWV 846) | Zero-gravity straight runs between rim chimes in three disjoint sectors (marbles never cross); repeats glance off the equator deflector. |
+| **Orbital Classics** | Bach, Prelude in C (BWV 846) | Zero-gravity straight runs between rim chimes in three disjoint sectors (marbles never cross); repeats glance off the equator deflector. A separate **Sandbox** mode turns the same arena into free physics where marbles grow on impact (interpretive: the song's pitches, not its rhythm). |
 | **Ring Escape** | Grieg, Hall of the Mountain King | Each phrase is a marble fired from the core through rotating rings; ring rotation is solved so each real gap meets the marble on its note; energy rises with the accelerando; bass on pendulum hammers. |
 
 **Ode to Joy** works in every scene (it is the cross-scene test piece). Song/scene combinations a
@@ -275,5 +275,6 @@ Third-party code: three.js r186 and its type definitions (MIT, vendored in `vend
 - Recording produced WebM in the test browser (it has no H.264 encoder); MP4 depends on the
   browser.
 - Choreographed performances are deterministic animations solved from the score, not free
-  physics simulations; the Playground scenes are the free-physics part.
+  physics simulations; the Playground scenes (and Orbital Classics' Sandbox mode) are the
+  free-physics part.
 - Very fast passages are excluded from some scenes rather than shown implausibly (see the Song menu).

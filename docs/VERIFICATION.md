@@ -11,7 +11,7 @@ settings/project/layout validation, sequencer loop length, MIDI parsing.
 
 ### Headless browser — `node scripts/browser-check.ts`
 Chromium via Playwright, software WebGL (SwiftShader), `--autoplay-policy=no-user-gesture-required`
-and the default virtual audio device. Latest run: **27/27 passed, 0 console errors**.
+and the default virtual audio device. Latest run: **28/28 passed, 0 console errors**.
 
 | Check | Result (latest run) |
 |---|---|
@@ -31,6 +31,7 @@ and the default virtual audio device. Latest run: **27/27 passed, 0 console erro
 | Clean view hides chrome; Esc restores | pass |
 | Persistence: saved project survives a reload and loads back (palette + scene) | pass |
 | Score import: hostile JSON rejected; valid JSON becomes a playable song | pass |
+| Orbital Classics sandbox mode: free physics plays the song's chimes; badge says interpretive | pass |
 | Mobile portrait (390×844): no horizontal scroll, canvas visible, `touch-action: none` | pass |
 | Every scene (10) renders without console errors | pass |
 

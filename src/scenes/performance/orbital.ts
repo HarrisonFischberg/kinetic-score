@@ -11,13 +11,14 @@ import { groupNotes, newBuilder, type NoteGroup } from '../../choreography/mecha
 import { noteName, timeNotes, type ScoreData, type TimedNote, type VoiceRole } from '../../music/score.ts';
 import type { DrawList } from '../../rendering/draw.ts';
 import type { Choreography, Family, FamilyContext, Prop, PropCtx } from './perfScene.ts';
+import { OrbitalSandbox } from './orbitalSandbox.ts';
 
-const R = 7.5;
+export const R = 7.5;
 const BALL = 0.22;
 const CH_TH = 0.1;
 const MAX_SPEED = 56;
 
-interface Half {
+export interface Half {
   key: 'up' | 'bass' | 'mid';
   /** +1 above the equator, −1 below */
   sign: 1 | -1;
@@ -28,13 +29,13 @@ interface Half {
 }
 
 // three sectors on disjoint arcs: chords of disjoint arcs never cross, so the marbles never meet
-const HALVES: Half[] = [
+export const HALVES: Half[] = [
   { key: 'up', sign: 1, voices: ['melody'], a0: Math.PI * 0.94, a1: Math.PI * 0.06 },
   { key: 'bass', sign: -1, voices: ['bass'], a0: Math.PI * 1.06, a1: Math.PI * 1.47 },
   { key: 'mid', sign: -1, voices: ['counter', 'accomp'], a0: Math.PI * 1.53, a1: Math.PI * 1.94 },
 ];
 
-function chimeAngles(pitches: number[], h: Half): Map<number, number> {
+export function chimeAngles(pitches: number[], h: Half): Map<number, number> {
   const m = new Map<number, number>();
   pitches.forEach((p, i) => m.set(p, pitches.length === 1 ? (h.a0 + h.a1) / 2 : h.a0 + ((h.a1 - h.a0) * i) / (pitches.length - 1)));
   return m;
@@ -71,6 +72,11 @@ export function orbitalRequiredSpeed(notes: TimedNote[]): number {
 const supportCache = new Map<string, string | null>();
 
 export const orbitalFamily: Family = {
+  sandbox: {
+    label: 'Sandbox — free physics, marbles grow on impact',
+    motion: 'Sandbox · interpretive: real contacts with the song’s chimes, marbles grow on impact',
+    make: (score, voicing, svc, seed) => new OrbitalSandbox(score, voicing, svc, seed),
+  },
   id: 'orbital',
   title: 'Orbital Classics',
   blurb: 'Zero-gravity string art: marbles glide in straight lines between tuned chimes around a circular arena — melody above the equator, bass below — tracing a new star with every chord. (For impacts that grow the marble, try the Growing Ball playground.)',
