@@ -83,6 +83,14 @@ the scene restarts; everything else applies immediately.
   sensitivity, retrigger mode (cooldown / once per ball visit / every contact), optional chord
   and sequence advancement. Global: scale, key, gravity, bounciness, friction, ball radius,
   launch speed, auto-spawn rate, ball cap, ball–ball collisions, clear balls.
+- **Harmony guide** (Builder and Collision Cascade, under Music/Sound) — keeps random collisions
+  musical. Notes follow a chord progression in the chosen key (*Bright* I–V–vi–IV by default,
+  *Calm*, *Dreamy* or one chord; chord changes every 4 s by default; the current chord is shown
+  in the counters). **Melody** mode (default): each hit moves at most a fifth from the previous
+  note, leaning toward the pitch of the part that was hit, so hits form a connected line.
+  **Chords** mode: each hit snaps to the nearest chord tone. **Off**: raw pitches as before.
+  Hits beyond *Notes allowed at once* (3 within ~0.1 s) stay silent but still flash. In the
+  Cascade, wall hits play a bass line and ball–ball hits play the melody over the same chords.
 - **Growing Ball** — each wall impact grows the marble, steps its melody, lowers its register,
   crossfades its timbre and pulses the arena; at a safe size limit it resolves with a chord and
   a new marble starts.

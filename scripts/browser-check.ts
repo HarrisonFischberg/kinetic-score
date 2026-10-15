@@ -169,6 +169,27 @@ await check('cascade: population never exceeds the cap', async () => {
   return `max live=${max} (cap 12), spawned=${spawned}`;
 });
 
+await check('harmony guide: busy Builder notes stay in the chord, follow each other, and pile-ups are thinned', async () => {
+  // log every note the scene plays, with the scene time and the chord shown at that moment
+  await ks(page, `k.switchScene('builder'); const s = k.debugScene(); Object.assign(s.values, { spawnRate: 5, ballCap: 60, harmony: 'melody', maxBurst: 3 });
+    window.__notes = []; const play = k.audio.play.bind(k.audio);
+    k.audio.play = (inst, pitch, o) => { const sc = k.debugScene(); const h = sc.harmony; window.__notes.push({ t: sc.host.simTime, pitch, pcs: h.chord(sc.host.simTime).pcs }); return play(inst, pitch, o); };`);
+  await page.waitForTimeout(7000);
+  const r = await page.evaluate(() => (window as unknown as { __notes: { t: number; pitch: number; pcs: number[] }[] }).__notes);
+  await ks(page, 'delete k.audio.play;');
+  if (r.length < 20) throw new Error(`only ${r.length} notes`);
+  const offChord = r.filter((n) => !n.pcs.includes(((n.pitch % 12) + 12) % 12)).length;
+  let maxBurst = 0;
+  for (const n of r) maxBurst = Math.max(maxBurst, r.filter((m) => m.t >= n.t && m.t - n.t < 0.12).length);
+  // melody: consecutive notes (excluding chord-stack notes at the same instant) move at most a fifth
+  let bigLeaps = 0;
+  for (let i = 1; i < r.length; i++) if (r[i].t !== r[i - 1].t && r[i].t - r[i - 1].t < 2.5 && Math.abs(r[i].pitch - r[i - 1].pitch) > 7) bigLeaps++;
+  if (offChord) throw new Error(`${offChord}/${r.length} notes outside the current chord`);
+  if (maxBurst > 3) throw new Error(`${maxBurst} notes within 0.12 s`);
+  if (bigLeaps) throw new Error(`${bigLeaps} leaps larger than a fifth`);
+  return `${r.length} notes, all chord tones; max ${maxBurst} per 0.12 s; no leap > 7 semitones`;
+});
+
 await check('growing ball: size stays within the limit', async () => {
   await ks(page, "k.switchScene('growing'); k.debugScene().values.growth = 0.12;");
   let max = 0;

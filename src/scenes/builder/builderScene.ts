@@ -8,6 +8,7 @@ import type { DrawList, RGB } from '../../rendering/draw.ts';
 import { pitchColor, paletteHue } from '../../rendering/palette.ts';
 import { INSTRUMENTS, type InstrumentId } from '../../audio/instruments.ts';
 import { chordDegrees, degreeToMidi, rootOptions, scaleOptions, type ChordKind } from '../../music/scales.ts';
+import { HARMONY_DEFAULTS, Harmonizer, applyHarmonyValues, harmonyParams } from '../../music/harmony.ts';
 import { noteName } from '../../music/score.ts';
 import type { Scene, SceneServices, ParamDef, ParamValue, ScenePointer } from '../types.ts';
 import { PhysicsHost, ballVisual } from '../physicsScene.ts';
@@ -46,6 +47,7 @@ export class BuilderScene implements Scene {
     tool: 'select',
     scale: 'majorPent',
     root: '2',
+    ...HARMONY_DEFAULTS,
     gravity: 9.8,
     restitution: 0.72,
     friction: 0.08,
@@ -67,6 +69,7 @@ export class BuilderScene implements Scene {
   };
   readonly params: ParamDef[];
   private host = new PhysicsHost();
+  private harmony = new Harmonizer();
   private svc!: SceneServices;
   private layout!: Layout;
   private baseline!: Layout;
@@ -106,6 +109,7 @@ export class BuilderScene implements Scene {
       { key: 'commitLayout', label: 'Use current layout as the start', type: 'button', applies: 'live', group: 'Scene', hint: 'Makes your edits the layout that Reset returns to (it is also saved with your settings)' },
       { key: 'scale', label: 'Scale', type: 'select', applies: 'live', group: 'Music', options: scaleOptions() },
       { key: 'root', label: 'Key', type: 'select', applies: 'live', group: 'Music', options: rootOptions() },
+      ...harmonyParams('Music'),
       { key: 'gravity', label: 'Gravity', type: 'range', min: 0, max: 30, step: 0.1, applies: 'live', group: 'Physics' },
       { key: 'restitution', label: 'Bounciness', type: 'range', min: 0, max: 1, step: 0.01, applies: 'live', group: 'Physics' },
       { key: 'friction', label: 'Friction', type: 'range', min: 0, max: 1, step: 0.01, applies: 'live', group: 'Physics' },
@@ -154,6 +158,7 @@ export class BuilderScene implements Scene {
   reset(): void {
     this.layout = cloneLayout(this.baseline);
     this.host.reset();
+    this.harmony.reset();
     this.svc.trails.clear();
     this.svc.particles.clear();
     this.rng = new Rng(this.svc.seed());
@@ -243,20 +248,24 @@ export class BuilderScene implements Scene {
       if (!this.host.cooldownOk(el.id, 0.03)) return;
     }
     const impact = clamp(e.speed / 9, 0.08, 1);
-    const vel = (1 - m.velSens) * 0.75 + m.velSens * impact;
-    const offs = chordDegrees(m.chord as ChordKind, String(this.values.scale));
-    let first = 0;
-    offs.forEach((o, i) => {
-      const p = this.pitchFor(el, o);
-      if (i === 0) first = p;
-      this.host.playNote(m.instrument, p, vel * (i === 0 ? 1 : 0.7), e.x, 0.5);
-    });
+    const t = this.host.simTime;
+    applyHarmonyValues(this.harmony, this.values);
+    // the harmony guide may move the pitch (to fit the chord / follow the last note) or silence a pile-up
+    const first = this.harmony.pitch(this.pitchFor(el), t);
+    if (first !== null) {
+      const vel = this.harmony.velocity((1 - m.velSens) * 0.75 + m.velSens * impact);
+      const offs = chordDegrees(m.chord as ChordKind, String(this.values.scale));
+      offs.forEach((o, i) => {
+        const p = i === 0 ? first : this.harmony.cfg.mode === 'off' ? this.pitchFor(el, o) : this.harmony.above(first, i, t);
+        this.host.playNote(m.instrument, p, vel * (i === 0 ? 1 : 0.7), e.x, 0.5);
+      });
+    }
     r.lastHit = this.host.simTime;
     r.lastBall = e.ball.id;
-    r.lastPitch = first;
+    if (first !== null) r.lastPitch = first;
     if (m.sequence) r.seqIndex = (r.seqIndex + 1) % Math.max(1, m.seqLength);
     ballVisual(e.ball).flash = 1;
-    this.svc.particles.burst(e.x, e.y, pitchColor(pal, first), impact, this.host.simTime, e.nx, e.ny);
+    this.svc.particles.burst(e.x, e.y, pitchColor(pal, first ?? r.lastPitch), first === null ? impact * 0.4 : impact, this.host.simTime, e.nx, e.ny);
   }
 
   private autoSpawn(dt: number): void {
@@ -746,6 +755,7 @@ export class BuilderScene implements Scene {
       ['Balls', String(this.host.liveCount)],
       ['Notes', String(this.host.notesPlayed)],
       ['Parts', String(this.layout.elements.length)],
+      ...(this.harmony.cfg.mode === 'off' ? [] : ([['Chord', this.harmony.chord(this.host.simTime).name]] as [string, string][])),
     ];
   }
 

@@ -10,6 +10,7 @@ import { hsl } from '../../core/math.ts';
 import { pitchColor } from '../../rendering/palette.ts';
 import { INSTRUMENTS, type InstrumentId } from '../../audio/instruments.ts';
 import { degreeToMidi, rootOptions, scaleOptions } from '../../music/scales.ts';
+import { HARMONY_DEFAULTS, Harmonizer, applyHarmonyValues, harmonyParams } from '../../music/harmony.ts';
 import type { ParamDef, ParamValue, Scene, SceneServices } from '../types.ts';
 import { PhysicsHost, ballVisual } from '../physicsScene.ts';
 
@@ -39,6 +40,7 @@ export class CascadeScene implements Scene {
     ballVoice: 'glass',
     scale: 'minorPent',
     root: '4',
+    ...HARMONY_DEFAULTS,
   };
   readonly params: ParamDef[] = [
     { key: 'wallSpawn', label: 'Wall-hit spawn chance', type: 'range', min: 0, max: 1, step: 0.05, applies: 'live', group: 'Spawning', hint: 'Wall impacts spawn a sibling sliding along the wall' },
@@ -53,8 +55,12 @@ export class CascadeScene implements Scene {
     { key: 'ballVoice', label: 'Ball–ball voice', type: 'select', applies: 'live', group: 'Sound', options: INSTRUMENTS.map((i) => ({ value: i.id, label: i.label })) },
     { key: 'scale', label: 'Scale', type: 'select', applies: 'live', group: 'Sound', options: scaleOptions() },
     { key: 'root', label: 'Key', type: 'select', applies: 'live', group: 'Sound', options: rootOptions() },
+    ...harmonyParams('Sound'),
   ];
   private host = new PhysicsHost();
+  /** ball–ball hits carry the melody; wall hits are a bass line under the same chords */
+  private melody = new Harmonizer({ low: 60, high: 88 });
+  private bass = new Harmonizer({ low: 38, high: 59, maxLeap: 7 });
   private svc!: SceneServices;
   private rng = new Rng(1);
   private meta = new Map<number, Meta>();
@@ -76,6 +82,8 @@ export class CascadeScene implements Scene {
 
   reset(): void {
     this.host.reset();
+    this.melody.reset();
+    this.bass.reset();
     this.svc.trails.clear();
     this.svc.particles.clear();
     this.rng = new Rng(this.svc.seed());
@@ -130,14 +138,21 @@ export class CascadeScene implements Scene {
     return null;
   }
 
-  private note(inst: InstrumentId, pitch: number, vel: number, x: number): boolean {
+  /** returns the pitch actually played, or null when the hit stays silent */
+  private note(inst: InstrumentId, requested: number, vel: number, x: number, voice: Harmonizer): number | null {
     if (this.tokens < 1) {
       this.silenced++;
-      return false;
+      return null;
+    }
+    applyHarmonyValues(voice, this.values);
+    const pitch = voice.pitch(requested, this.host.simTime);
+    if (pitch === null) {
+      this.silenced++;
+      return null;
     }
     this.tokens -= 1;
-    this.host.playNote(inst, pitch, vel, x, 0.5);
-    return true;
+    this.host.playNote(inst, pitch, voice.velocity(vel), x, 0.5);
+    return pitch;
   }
 
   private contact(e: ContactEvent): void {
@@ -156,7 +171,8 @@ export class CascadeScene implements Scene {
       const gen = Math.max(b.generation, o.generation);
       const pitch = degreeToMidi(4 + gen * 2 + ((b.id + o.id) % 3), root, scale, 5);
       if (this.host.cooldownOk(`bb${Math.min(b.id, o.id)}:${Math.max(b.id, o.id)}`, 0.15)) {
-        if (this.note(String(this.values.ballVoice) as InstrumentId, pitch, clamp(0.3 + e.speed / 18, 0.25, 0.9), e.x)) this.svc.particles.burst(e.x, e.y, pitchColor(pal, pitch), 0.5, now);
+        const played = this.note(String(this.values.ballVoice) as InstrumentId, pitch, clamp(0.3 + e.speed / 18, 0.25, 0.9), e.x, this.melody);
+        if (played !== null) this.svc.particles.burst(e.x, e.y, pitchColor(pal, played), 0.5, now);
         ballVisual(b).flash = 1;
         ballVisual(o).flash = 1;
       }
@@ -181,7 +197,8 @@ export class CascadeScene implements Scene {
     // walls: low register, each wall a different degree; hub: a fifth
     const deg = idx === 4 ? 4 : [0, 2, 1, 3][idx] ?? 0;
     const pitch = degreeToMidi(deg - b.generation, root, scale, 3);
-    if (this.note(String(this.values.wallVoice) as InstrumentId, pitch, clamp(0.3 + e.speed / 16, 0.25, 1), e.x)) this.svc.particles.burst(e.x, e.y, pitchColor(pal, pitch), 0.4, now, e.nx, e.ny);
+    const played = this.note(String(this.values.wallVoice) as InstrumentId, pitch, clamp(0.3 + e.speed / 16, 0.25, 1), e.x, this.bass);
+    if (played !== null) this.svc.particles.burst(e.x, e.y, pitchColor(pal, played), 0.4, now, e.nx, e.ny);
     if (idx < 4) this.wallFlash[idx] = 1;
     ballVisual(b).flash = 1;
     const m = this.meta.get(b.id);
@@ -267,6 +284,7 @@ export class CascadeScene implements Scene {
       ['Notes', String(this.host.notesPlayed)],
       ['Gen', String(maxGen)],
       ['Muted hits', String(this.silenced)],
+      ...(this.values.harmony === 'off' ? [] : ([['Chord', this.melody.chord(this.host.simTime).name]] as [string, string][])),
     ];
   }
 

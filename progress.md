@@ -77,7 +77,13 @@ was done and what was actually run/verified.
 - 13: Melody Rain is now the scene shown on every page load (and the default when choosing
   Performance mode).
 
-Iterations used: 13 of 40.
+- 14: Harmony guide for the Builder and Collision Cascade (owner feedback: free-physics hits
+  sounded like noise). Chord progression + melody mode (each hit steps from the previous note) +
+  pile-up thinning. Verified: 7 new unit tests (102/102), new browser check — 43 busy Builder
+  notes all chord tones, ≤3 per 0.12 s, no leap > a fifth; full browser suite 33/33, 0 console
+  errors. Whether it *sounds* good is for the owner's ears.
+
+Iterations used: 14 of 40.
 
 ## Song support per scene (computed by each family, also shown in the Song menu)
 - Canon Contraption, Melody Rain, Musical Maze: all 8 excerpts.

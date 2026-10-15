@@ -3,11 +3,11 @@
 ## Automated
 
 ### Unit tests — `npm test` (or `node --test "tests/**/*.test.ts"`)
-95 tests, all passing at the time of writing. Coverage: score data and validation, timing,
+102 tests, all passing at the time of writing. Coverage: score data and validation, timing,
 choreography plausibility for every performance family × supported song × tempo (1.0, 0.8),
 maze door timing, physics determinism/tunnelling/retrigger/sensors, stepper cap, safe spawning,
 transport and scheduler (pause/resume/seek/reset, no duplicates or reordering), Shepard maths,
-settings/project/layout validation, sequencer loop length, MIDI parsing.
+settings/project/layout validation, harmony guide (chord tones, leap size, pile-up thinning), sequencer loop length, MIDI parsing.
 
 ### Install and build
 `npm install` (Vite 7.3.7, TypeScript 5.9.3; 0 vulnerabilities), `npm run typecheck` clean,
@@ -23,7 +23,7 @@ The manual checklist below still applies.
 
 ### Headless browser — `node scripts/browser-check.ts`
 Chromium via Playwright, software WebGL (SwiftShader), `--autoplay-policy=no-user-gesture-required`
-and the default virtual audio device. Latest run: **32/32 passed, 0 console errors**.
+and the default virtual audio device. Latest run: **33/33 passed, 0 console errors**.
 
 | Check | Result (latest run) |
 |---|---|
@@ -32,6 +32,7 @@ and the default virtual audio device. Latest run: **32/32 passed, 0 console erro
 | Performance: audio events scheduled so far equal the activations that are due (Canon, t≈9 s) | pass (7 = 7) |
 | Pause holds the transport still; R restarts from the top | pass |
 | Builder: click drops a ball, launcher drag launches, contacts produce notes, edit-mode pad placement + Ctrl+Z | pass |
+| Harmony guide: busy Builder (5 balls/s) — every note is a tone of the chord shown at that moment, ≤3 notes per 0.12 s, no melodic leap > 7 semitones | pass (43 notes) |
 | Cascade: population never exceeds the cap (cap 12, aggressive spawning) | pass |
 | Growing ball: size stays within the limit | pass |
 | Shepard lab: direction control reverses the phase | pass |
@@ -65,6 +66,8 @@ These need a real browser on real hardware. Tick them off when you try the app:
       Rondo alla turca, Prelude in C, Mountain King, Eine kleine Nachtmusik, Brandenburg 1).
       (The three priority pieces' openings were confirmed *by pitch analysis of recorded files*,
       not by listening.)
+- [ ] **Harmony guide**: Builder with a high auto-spawn rate sounds like a connected melody over
+      changing chords, not noise; compare with Harmony guide → Off.
 - [ ] **AV sync by eye and ear**: in Melody Rain and the Canon Contraption, every strike flashes
       exactly as its note sounds (try with headphones and with speakers).
 - [ ] **Shepard illusion**: in the lab, the tone seems to rise forever without an audible
