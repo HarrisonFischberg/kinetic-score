@@ -62,6 +62,11 @@ was done and what was actually run/verified.
   YIN pitch of the openings of Für Elise, Ode to Joy (melody soloed) and the Canon ground bass —
   all exact; video flash vs audio bounded by the headless frame rate. Browser suite 32/32.
 
+- 10: overview framing reserves headroom for the title overlay; final full runs: 95/95 unit tests,
+  32/32 headless browser checks, 0 console errors.
+
+Iterations used: 10 of 40.
+
 ## Song support per scene (computed by each family, also shown in the Song menu)
 - Canon Contraption, Melody Rain, Musical Maze: all 8 excerpts.
 - Orbital Classics: Prelude, Canon, Für Elise, Ode to Joy, Mountain King. Disabled (leaps too fast
