@@ -528,6 +528,7 @@ export class App {
     scene.hud?.(dl, t, this.renderer.aspect);
     this.drawHud(t);
     this.camera.aspect = this.renderer.aspect;
+    this.camera.padTop = app.showTitle ? 0.11 : 0;
     this.camera.update(dt);
     dl.end();
     this.renderer.render(this.camera, nowMs / 1000);

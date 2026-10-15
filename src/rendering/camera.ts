@@ -27,6 +27,8 @@ export class CameraController {
   /** follow framing size requested by the scene */
   followHeight = 12;
   margin = 1.08;
+  /** fraction of the view kept clear at the top (for the title overlay) */
+  padTop = 0;
 
   setBounds(b: Bounds, snap = false): void {
     this.bounds = { ...b };
@@ -37,7 +39,10 @@ export class CameraController {
     const b = this.bounds;
     const w = b.maxX - b.minX;
     const h = b.maxY - b.minY;
-    return { x: (b.minX + b.maxX) / 2, y: (b.minY + b.maxY) / 2, h: Math.max(h, w / this.aspect) * this.margin };
+    const fit = Math.max(h, w / this.aspect) * this.margin;
+    const total = fit / (1 - this.padTop);
+    // shift the content down so the reserved band at the top stays clear
+    return { x: (b.minX + b.maxX) / 2, y: (b.minY + b.maxY) / 2 + (total - fit) / 2, h: total };
   }
 
   snapToOverview(): void {
