@@ -16,6 +16,11 @@ both the zero-dependency build (`dist-static/`, 32/32) and `vite preview` of the
 (31/32 in the full run — the Canon recorded-audio analysis had one outlier onset under load and
 passed 3/3 when re-run alone).
 
+### Live site
+Published to GitHub Pages by `.github/workflows/pages.yml` (tests + Vite build + deploy all green).
+Confirmed by the owner to load in a real browser at https://harrisonfischberg.github.io/kinetic-score/.
+The manual checklist below still applies.
+
 ### Headless browser — `node scripts/browser-check.ts`
 Chromium via Playwright, software WebGL (SwiftShader), `--autoplay-policy=no-user-gesture-required`
 and the default virtual audio device. Latest run: **32/32 passed, 0 console errors**.

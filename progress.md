@@ -71,7 +71,10 @@ was done and what was actually run/verified.
   errors; the one failure was the Canon recorded-audio analysis (one outlier onset under load), which
   then passed 3/3 when re-run on its own. Vite config now strips the static-build placeholder.
 
-Iterations used: 11 of 40.
+- 12: GitHub Pages deploy workflow added; repo made public and Pages enabled by the owner; deploy run
+  green; owner confirmed the live site loads in a real browser.
+
+Iterations used: 12 of 40.
 
 ## Song support per scene (computed by each family, also shown in the Song menu)
 - Canon Contraption, Melody Rain, Musical Maze: all 8 excerpts.
