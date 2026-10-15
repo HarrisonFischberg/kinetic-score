@@ -134,7 +134,7 @@ export class App {
     const sceneSel = h('select', { 'aria-label': 'Scene', onchange: (e: Event) => this.switchScene((e.target as HTMLSelectElement).value) });
     const songSel = h('select', { 'aria-label': 'Song', class: 'song', onchange: (e: Event) => this.setSceneParam('song', (e.target as HTMLSelectElement).value) });
     const play = h('button', { class: 'hbtn icon primary', type: 'button', title: 'Play / pause (Space)', 'aria-label': 'Play or pause', onclick: () => this.togglePlay() }, '▶');
-    const restart = h('button', { class: 'hbtn icon', type: 'button', title: 'Restart from the beginning (R)', 'aria-label': 'Restart', onclick: () => this.restart() }, '↺');
+    const restart = h('button', { class: 'hbtn icon', type: 'button', title: 'Restart from the beginning (R)', 'aria-label': 'Restart', onclick: () => this.userRestart() }, '↺');
     const step = h('button', { class: 'hbtn icon hide-narrow', type: 'button', title: 'Single step while paused (.)', 'aria-label': 'Single step', onclick: () => this.stepOnce() }, '⏭');
     const time = h('span', { class: 'time hide-narrow', 'aria-live': 'off' }, '0:00.0');
     const speedSel = h(
@@ -434,6 +434,12 @@ export class App {
     this.loopTake = null;
   }
 
+  /** Restart requested by the user (button or R): not allowed in the middle of a take. */
+  private userRestart(): void {
+    if (this.recorder.recording || this.loopTake) return this.notify('Restart is disabled while recording — stop the take first.', 'warn');
+    this.restart();
+  }
+
   private playEvent(e: PerfEvent, when: number): Cancellable[] {
     if (!this.audio.running) return [];
     const out: Cancellable[] = [];
@@ -699,8 +705,7 @@ export class App {
     const k = e.key.toLowerCase();
     if (k === 'r') {
       e.preventDefault();
-      if (this.recorder.recording && !this.recordPerformance) return this.notify('Restart is disabled during a manual take.', 'warn');
-      this.restart();
+      this.userRestart();
     } else if (k === 'h') {
       e.preventDefault();
       this.togglePanel();

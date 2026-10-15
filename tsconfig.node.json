@@ -15,6 +15,7 @@
   "exclude": [
     "scripts/browser-check.ts",
     "scripts/capture.ts",
-    "scripts/capture-live.ts"
+    "scripts/capture-live.ts",
+    "scripts/capture-song.ts"
   ]
 }
