@@ -114,6 +114,7 @@ export class EventScheduler<E extends Scheduled> {
   private readonly sink: (e: E, when: number) => Cancellable[];
   lookahead: number;
   scheduledCount = 0;
+  private pausedAt: number | null = null;
 
   constructor(events: E[], sink: (e: E, when: number) => Cancellable[], lookahead = 0.15) {
     this.events = [...events].sort((a, b) => a.time - b.time);
@@ -157,7 +158,8 @@ export class EventScheduler<E extends Scheduled> {
   }
 
   /** Cancel not-yet-started events and rewind to the first of them. */
-  pause(now: number): void {
+  pause(now: number, position?: number): void {
+    if (position !== undefined) this.pausedAt = position;
     let first = -1;
     for (let i = this.pending.length - 1; i >= 0; i--) {
       const p = this.pending[i];
@@ -173,7 +175,20 @@ export class EventScheduler<E extends Scheduled> {
   /** Jump: cancel all future events and continue from `pos`. */
   seek(pos: number, now: number): void {
     this.pause(now);
+    this.pausedAt = null;
     this.cursor = this.firstAtOrAfter(pos);
+  }
+
+  /**
+   * Continue after a pause. If the transport did not move, the cursor already points at the
+   * first cancelled event, so nothing that sounded is replayed; otherwise behave like a seek.
+   */
+  resume(pos: number, now: number): void {
+    if (this.pausedAt !== null && Math.abs(pos - this.pausedAt) < 1e-6) {
+      this.pausedAt = null;
+      return;
+    }
+    this.seek(pos, now);
   }
 
   cancelAll(): void {

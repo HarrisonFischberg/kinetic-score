@@ -368,13 +368,13 @@ export class App {
   private play(): void {
     if (this.finished) return this.restart();
     this.transport.play();
-    if (this.scheduler) this.scheduler.seek(this.transport.position, this.transport.now());
+    if (this.scheduler) this.scheduler.resume(this.transport.position, this.transport.now());
     this.pausedByVisibility = false;
     this.updatePlayButton();
   }
 
   private pause(): void {
-    if (this.scheduler) this.scheduler.pause(this.transport.now());
+    if (this.scheduler) this.scheduler.pause(this.transport.now(), this.transport.position);
     this.transport.pause();
     if (this.scheduler) this.audio.cancelFuture();
     this.updatePlayButton();

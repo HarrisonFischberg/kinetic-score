@@ -1,10 +1,21 @@
 # Kinetic Score — progress
 
+Bounded iterative loop (max 40 iterations; Ralph plugin skipped by user choice). Each entry lists what
+was done and what was actually run/verified.
+
 ## Decisions
-- Stack: Vite + TypeScript + Three.js, Web Audio, MediaRecorder, Vitest. Custom deterministic 2D physics (circles vs segments) planned.
-- Ralph /ralph-loop plugin: skipped by user choice. Bounded iterative workflow tracked in this file (max 40 iterations).
-- Score sources: Mutopia Project MIDI files rendered from LilyPond typesettings of PD editions, stored in `score-src/`.
-  Plan: parse with a local build script into inspectable JSON note events, then arrange excerpts.
+- Stack: TypeScript + Three.js (r186, vendored in `vendor/three`, MIT) + Web Audio + MediaRecorder.
+  Vite is configured for normal local use (`npm run dev` / `npm run build`). The cloud build
+  environment could not reach the npm registry (HTTP 403 from the egress policy), so a
+  zero-dependency path is also provided and is what was verified here: `node scripts/build-static.ts`
+  (tsc → native ES modules + import map) and `node scripts/serve.ts`.
+- Tests use Node's built-in test runner on TypeScript directly (Node ≥ 22.18), no Vitest.
+- Custom deterministic 2D physics (circles vs segments/circles/arcs, kinematic bodies, sensors).
+- Performance scenes are choreographed: every motion is a pure function of transport time,
+  solved backwards from the score (ballistic arcs, rails, timed releases). Activations are
+  the single source for both audio events and visible strikes.
+- Score sources: Mutopia Project MIDI files in `score-src/`, converted by `scripts/build-scores.ts`
+  to validated JSON in `public/scores/` with source/licence/arrangement notes.
 
 | Piece | Mutopia id | Source edition | Mutopia license |
 |---|---|---|---|
@@ -17,11 +28,31 @@
 | Mozart, Eine kleine Nachtmusik K.525 mvt 1 | 900 | IMSLP | Public Domain |
 | Bach, Brandenburg Concerto No.1 BWV 1046 mvt 1 | 1136 | Rust 1871, BG vol. 19 | CC BY 3.0 |
 
-- Not used: Moonlight Sonata (Mutopia id 276, CC BY-SA 2.5) and Vivaldi Spring (id 301, CC BY-SA 3.0) — share-alike; document as unavailable unless a PD typesetting is found.
-- Note: Mutopia "Source" fields of "IMSLP"/"Unknown"/"Various" do not name an exact edition; README must say so honestly.
+- Not used: Moonlight Sonata (Mutopia 276, CC BY-SA 2.5) and Vivaldi Spring (Mutopia 301,
+  CC BY-SA 3.0): listed in the app as unavailable with the reason.
 
 ## Iterations
-- 0: project folder, source research, MIDI downloads. No app code yet.
+- 0: project folder, source research, MIDI downloads.
+- 1: scaffold (package/tsconfig/vite config, vendored three + types), MIDI parser, score builder,
+  physics, audio engine, transport + scheduler, renderer, builder sandbox, app shell.
+  Verified: typecheck; headless Chromium: loads with 0 console errors, no audio before click,
+  click-drop, launcher drag, contact notes, edit+undo.
+- 2: Growing Ball, Collision Cascade, Geometric Sequencer (timeline scene with exact loop),
+  Shepard lab. Verified: each scene runs in headless Chromium without errors (screenshots reviewed).
+- 3: choreography core, performance scene base, Melody Rain; first unit tests (scores, 1:1 note↔activation).
+- 4: Canon Contraption (4 stages, 12 mechanism types, finale bowl) + reflection-validity constraints.
+- 5: Musical Maze, Orbital Classics, Ring Escape; computed song support with reasons; runtime
+  choreography validation. Tests: 78 pass (scores, every family × supported song × tempo 1 and 0.8).
+
+## Song support per scene (computed by each family, also shown in the Song menu)
+- Canon Contraption, Melody Rain, Musical Maze: all 8 excerpts.
+- Orbital Classics: Prelude, Canon, Für Elise, Ode to Joy, Mountain King. Disabled (leaps too fast
+  for the arena): Rondo alla turca, Eine kleine Nachtmusik, Brandenburg 1.
+- Ring Escape: Mountain King, Canon, Für Elise, Ode to Joy, Prelude. Disabled: Eine kleine,
+  Brandenburg (notes too close together), Rondo alla turca (one pass too tight).
 
 ## Remaining
-- Everything in the brief (see README once written).
+- Unit tests: physics determinism, transport/scheduler pause-resume, contact retrigger, spawn caps,
+  settings validation, Shepard math.
+- Browser checks: recording (MIME/extension/dimensions/audio), persistence reload, sync.
+- README with architecture, controls, rights; manual verification checklist.
