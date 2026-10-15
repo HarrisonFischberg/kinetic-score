@@ -278,16 +278,14 @@ await check('recording: "whole performance" take starts from the top and stops i
   return `started at ${r.started.toFixed(2)} s, auto-stopped after ${r.stoppedAfter.toFixed(1)} s, ${r.w}×${r.h}`;
 });
 
-await check('recorded audio: onsets line up with the score and the opening pitches are Für Elise', async () => {
-  const r = await ks<{ expected: number; matched: number; median: number; p95: number; offset: number; pitches: number[]; skews: number[]; frameMs: number; strikes: number; err?: string } | null>(
-    page,
-    `return (async () => {
+type AvResult = { expected: number; matched: number; median: number; p95: number; offset: number; pitches: number[]; skews: number[]; frameMs: number; strikes: number; err?: string };
+const AV_BODY = `return (async () => {
       k.settings.audio.ambience = false;
       k.settings.audio.mech = 0;
       k.applyAudioSettings();
-      k.switchScene('rain');
+      k.switchScene(a.scene);
       const sc = k.debugScene();
-      sc.values.song = 'fur-elise';
+      sc.values.song = a.song;
       sc.values.voicing = 'mallets';
       sc.values.tempo = 1;
       k.restart();
@@ -296,7 +294,7 @@ await check('recorded audio: onsets line up with the score and the opening pitch
       await k.toggleRecord();
       // world → recorded-pixel mapping (overview camera is static in this scene)
       const cam = { x: k.camera.x, y: k.camera.y, h: k.camera.height, W: k.renderer.pixelWidth, H: k.renderer.pixelHeight };
-      await new Promise((res) => setTimeout(res, 9000));
+      await new Promise((res) => setTimeout(res, a.secs * 1000));
       k.stopRecording();
       let rec = null;
       for (let i = 0; i < 40 && !rec; i++) {
@@ -348,24 +346,54 @@ await check('recorded audio: onsets line up with the score and the opening pitch
       const med = signed.length ? signed[Math.floor(signed.length / 2)] : 0;
       best.off += med;
       const errs = signed.map((d) => Math.abs(d - med) * 1000).sort((a, b) => a - b);
-      // pitch of the first 9 notes (monophonic opening) by autocorrelation
+      // pitch of the opening notes with YIN (cumulative-mean-normalised difference; the first
+      // dip below the threshold is the fundamental, which avoids locking onto upper partials)
       const pitches = [];
       for (const t of exp.slice(0, 8)) {
-        const s0 = Math.round((t + best.off + 0.03) * sr);
-        const n = Math.round(sr * 0.09);
-        let bestLag = 0;
-        let bestC = -Infinity;
-        for (let lag = Math.round(sr / 1500); lag < Math.round(sr / 150); lag++) {
-          let c = 0;
-          for (let j = 0; j < n; j++) c += ch[s0 + j] * ch[s0 + j + lag];
-          if (c > bestC) {
-            bestC = c;
-            bestLag = lag;
+        const s0 = Math.round((t + best.off + 0.035) * sr);
+        const n = Math.round(sr * 0.06);
+        const tauMin = Math.round(sr / 1500);
+        const tauMax = Math.round(sr / a.fMin);
+        const d = new Float64Array(tauMax + 1);
+        for (let tau = 1; tau <= tauMax; tau++) {
+          let acc = 0;
+          for (let j = 0; j < n; j++) {
+            const diff = ch[s0 + j] - ch[s0 + j + tau];
+            acc += diff * diff;
+          }
+          d[tau] = acc;
+        }
+        let run = 0;
+        let pick = -1;
+        let minV = Infinity;
+        let minTau = tauMin;
+        for (let tau = 1; tau <= tauMax; tau++) {
+          run += d[tau];
+          const v = run > 0 ? (d[tau] * tau) / run : 1;
+          if (tau < tauMin) continue;
+          if (v < minV) {
+            minV = v;
+            minTau = tau;
+          }
+          if (pick < 0 && v < 0.15) {
+            // walk to the bottom of this dip
+            let tt = tau;
+            let r2 = run;
+            while (tt + 1 <= tauMax) {
+              const nr = r2 + d[tt + 1];
+              const nv = (d[tt + 1] * (tt + 1)) / nr;
+              if (nv >= (d[tt] * tt) / r2) break;
+              tt++;
+              r2 = nr;
+            }
+            pick = tt;
           }
         }
-        pitches.push(Math.round(69 + 12 * Math.log2(sr / bestLag / 440)));
+        const tau = pick > 0 ? pick : minTau;
+        pitches.push(Math.round(69 + 12 * Math.log2(sr / tau / 440)));
       }
       await ac.close();
+      if (!a.video) return { expected: exp.length, matched: errs.length, median: errs[Math.floor(errs.length / 2)] ?? -1, p95: errs[Math.floor(errs.length * 0.95)] ?? -1, offset: best.off, pitches, skews: [], frameMs: 0, strikes: 0 };
       // ---- video: when does the E5 pad visibly flash in the decoded frames?
       const ch2 = sc.getChoreography();
       const pad = ch2.acts.find((a) => a.notes.some((n) => n.pitch === 76));
@@ -413,7 +441,13 @@ await check('recorded audio: onsets line up with the score and the opening pitch
       }
       const frameMs = samples.length > 2 ? Math.round(((samples[samples.length - 1].t - samples[0].t) / (samples.length - 1)) * 1000) : -1;
       return { expected: exp.length, matched: errs.length, median: errs[Math.floor(errs.length / 2)] ?? -1, p95: errs[Math.floor(errs.length * 0.95)] ?? -1, offset: best.off, pitches, skews, frameMs, strikes: e5.length };
-    })()`,
+    })()`;
+
+await check('recorded audio: onsets line up with the score and the opening pitches are Für Elise', async () => {
+  const r = await ks<AvResult | null>(
+    page,
+    AV_BODY,
+    { scene: 'rain', song: 'fur-elise', fMin: 150, video: true, secs: 9 },
   );
   if (!r || r.err) throw new Error(r?.err ?? 'no result');
   // the first eight notes are the unaccompanied motif (the bass enters with the ninth)
@@ -426,6 +460,16 @@ await check('recorded audio: onsets line up with the score and the opening pitch
   if (pitchOk < 7) throw new Error(detail + av);
   if (r.skews.length < Math.min(2, r.strikes) || r.skews.some((x) => Math.abs(x) > Math.max(50, r.frameMs * 1.5))) throw new Error(detail + av);
   return detail + av;
+});
+
+await check('recorded audio (Canon Contraption): onsets match and the ground bass pitches are D A B F♯ G D G A', async () => {
+  const r = await ks<AvResult | null>(page, AV_BODY, { scene: 'canon', song: 'canon-in-d', fMin: 60, video: false, secs: 12 });
+  if (!r || r.err) throw new Error(r?.err ?? 'no result');
+  const bass = [50, 45, 47, 42, 43, 38, 43, 45];
+  const ok = r.pitches.filter((p, i) => p === bass[i] || p === bass[i] + 12 || p === bass[i] - 12).length;
+  const detail = `onsets ${r.matched}/${r.expected} within ±30 ms (jitter median ${r.median.toFixed(1)} ms, 95th ${r.p95.toFixed(1)} ms); first eight pitches ${r.pitches.join(' ')} (${ok}/8 = D3 A2 B2 F♯2 G2 D2 G2 A2, octave-tolerant)`;
+  if (r.matched < r.expected * 0.8 || r.p95 > 15 || ok < 7) throw new Error(detail);
+  return detail;
 });
 
 await check('screenshot downloads a PNG', async () => {

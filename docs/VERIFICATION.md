@@ -11,7 +11,7 @@ settings/project/layout validation, sequencer loop length, MIDI parsing.
 
 ### Headless browser — `node scripts/browser-check.ts`
 Chromium via Playwright, software WebGL (SwiftShader), `--autoplay-policy=no-user-gesture-required`
-and the default virtual audio device. Latest run: **29/29 passed, 0 console errors**.
+and the default virtual audio device. Latest run: **31/31 passed, 0 console errors**.
 
 | Check | Result (latest run) |
 |---|---|
@@ -27,9 +27,10 @@ and the default virtual audio device. Latest run: **29/29 passed, 0 console erro
 | Recording: 3 s timed take → WebM, 720×1280, extension matches MIME, audio track decodes, preview size restored | pass |
 | Recording: second take (square 720×720) | pass |
 | Recording: "whole performance" take starts at 0 and auto-stops after the last note + tail | pass |
-| **Recorded audio vs score** (Melody Rain, Für Elise, whole-performance take, decoded from the WebM): note onsets detected in the file match the score's activations | pass — 32/32 within ±30 ms; after removing the constant recorder offset, timing jitter median 1.4 ms, 95th percentile 3.2 ms |
-| **Recorded audio pitches**: autocorrelation pitch of the first eight notes in the file | pass — 76 75 76 75 76 71 74 72 = E5 D♯5 E5 D♯5 E5 B4 D5 C5 (Für Elise's opening, exact) |
-| **Recorded video vs audio**: frame at which the E5 pad visibly flashes vs that note's onset in the same file | pass within frame resolution — +32 / +48 / +175 ms; headless software rendering only produced ≈6 frames/s, so the flash shows in the first captured frame after the note. On real GPUs at 30 fps this bound is ≈33 ms; not measured here |
+| **Recorded audio vs score** (Melody Rain, Für Elise, whole-performance take, decoded from the WebM): note onsets detected in the file match the score's activations | pass — 32/32 within ±30 ms; after removing the constant recorder offset, timing jitter median ≈1.3 ms, 95th percentile ≈3.5 ms |
+| **Recorded audio pitches**: YIN pitch of the first eight notes in the file | pass — 76 75 76 75 76 71 74 72 = E5 D♯5 E5 D♯5 E5 B4 D5 C5 (Für Elise's opening, exact) |
+| **Recorded video vs audio**: frame at which the E5 pad visibly flashes vs that note's onset in the same file | pass within frame resolution — skews of a few tens of ms either way (latest: −34 / −8 / +20 ms); headless software rendering only produced ≈6–7 frames/s, so this is bounded by the frame interval (≈150 ms). On real GPUs at 30 fps the bound is ≈33 ms; not measured here |
+| **Recorded audio, Canon Contraption**: onsets and the pitches of the unaccompanied ground bass | pass — 9/9 onsets, jitter median ≈1.4 ms; first eight pitches 50 45 47 42 43 38 43 45 = D3 A2 B2 F♯2 G2 D2 G2 A2 (exact) |
 | PNG screenshot downloads | pass |
 | Clean view hides chrome; Esc restores | pass |
 | Persistence: saved project survives a reload and loads back (palette + scene) | pass |

@@ -264,9 +264,9 @@ Third-party code: three.js r186 and its type definitions (MIT, vendored in `vend
   level and phase continuity, settings/project/layout validation, sequencer loop length, MIDI
   parsing.
 - `node scripts/browser-check.ts` — headless Chromium (software WebGL, fake audio device),
-  including an analysis of a recorded take: note onsets decoded from the file match the score
-  with ~1.5 ms median jitter, and the opening pitches detected in the file are exactly Für
-  Elise's motif. See
+  including an analysis of recorded takes: note onsets decoded from the files match the score
+  with ~1.5 ms median jitter, and the pitches detected in the files are exactly Für Elise's
+  opening motif and the Canon's ground bass. See
   [docs/VERIFICATION.md](docs/VERIFICATION.md) for the list, the latest results and the manual
   checklist for things that need real eyes, ears and devices.
 
