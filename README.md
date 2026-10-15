@@ -57,7 +57,7 @@ package and a Chromium build, not project dependencies).
 
 ## Using it
 
-Open the page: a silent preview of the Canon Contraption runs behind a start card. Nothing
+Open the page: a silent preview of Melody Rain runs behind a start card. Nothing
 makes a sound until you press **Enable audio & start** (or later, **Sound off** in the header).
 
 | Action | How |

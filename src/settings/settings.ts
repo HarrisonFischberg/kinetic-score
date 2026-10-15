@@ -65,7 +65,7 @@ export function defaultSettings(): AppSettings {
     audio: { master: 0.8, muted: false, ambience: true, mech: 0.35, inst },
     export: { aspect: 'landscape', framePreview: false, mode: 'manual', timedSeconds: 20, res: 'hd', fps: 30, countdown: true, dprCap: 2, tail: 2.5 },
     simSpeed: 1,
-    lastScene: 'canon',
+    lastScene: 'rain',
     sceneValues: {},
     layout: null,
   };

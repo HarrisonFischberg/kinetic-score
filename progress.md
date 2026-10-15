@@ -74,7 +74,10 @@ was done and what was actually run/verified.
 - 12: GitHub Pages deploy workflow added; repo made public and Pages enabled by the owner; deploy run
   green; owner confirmed the live site loads in a real browser.
 
-Iterations used: 12 of 40.
+- 13: Melody Rain is now the scene shown on every page load (and the default when choosing
+  Performance mode).
+
+Iterations used: 13 of 40.
 
 ## Song support per scene (computed by each family, also shown in the Song menu)
 - Canon Contraption, Melody Rain, Musical Maze: all 8 excerpts.

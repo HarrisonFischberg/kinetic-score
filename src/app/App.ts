@@ -94,7 +94,8 @@ export class App {
     for (const e of lib.errors) this.notify(e, 'warn');
     this.applyAudioSettings();
     this.applyAppearance();
-    const first = sceneEntry(this.settings.lastScene) ?? SCENES[0];
+    // Melody Rain is always the first thing shown on page load.
+    const first = sceneEntry('rain') ?? SCENES[0];
     this.switchScene(first.id);
     this.buildOverlay();
     new ResizeObserver(() => this.layout()).observe(this.stage);
@@ -235,7 +236,7 @@ export class App {
     if (this.recorder.recording) return this.notify('Stop recording before switching scenes.', 'warn');
     const target = SCENES.find((s) => s.mode === mode);
     if (target && this.entry.mode !== mode) {
-      const preferred = mode === 'performance' ? 'canon' : 'builder';
+      const preferred = mode === 'performance' ? 'rain' : 'builder';
       this.switchScene(sceneEntry(preferred)?.mode === mode ? preferred : target.id);
     }
   }
