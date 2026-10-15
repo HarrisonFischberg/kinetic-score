@@ -146,7 +146,7 @@ export class Trails {
         const y = tr.ys[i];
         if (age <= this.length && !Number.isNaN(px)) {
           const f = 1 - age / this.length;
-          if ((x - px) ** 2 + (y - py) ** 2 < 9) dl.line(px, py, x, y, tr.r * 0.55 * f + 0.01, tr.c, f * f * 0.55, 0, 'trail');
+          if ((x - px) ** 2 + (y - py) ** 2 < 9) dl.line(px, py, x, y, Math.min(0.14, tr.r * 0.55) * f + 0.01, tr.c, f * f * 0.55, 0, 'trail');
         }
         px = x;
         py = y;
@@ -172,7 +172,7 @@ export function drawSampledTrail(dl: DrawList, sample: (t: number) => { x: numbe
     }
     if (prev) {
       const f = 1 - i / steps;
-      if ((s.x - prev.x) ** 2 + (s.y - prev.y) ** 2 < 16) dl.line(prev.x, prev.y, s.x, s.y, r * 0.55 * f + 0.01, c, f * f * 0.55, 0, 'trail');
+      if ((s.x - prev.x) ** 2 + (s.y - prev.y) ** 2 < 16) dl.line(prev.x, prev.y, s.x, s.y, Math.min(0.14, r * 0.55) * f + 0.01, c, f * f * 0.55, 0, 'trail');
     }
     prev = { x: s.x, y: s.y };
   }

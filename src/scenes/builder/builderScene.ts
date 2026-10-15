@@ -51,7 +51,7 @@ export class BuilderScene implements Scene {
     friction: 0.08,
     ballRadius: 0.22,
     launchSpeed: 13,
-    spawnRate: 0,
+    spawnRate: 0.5,
     ballCap: 80,
     ballCollisions: true,
     'sel.degree': 0,

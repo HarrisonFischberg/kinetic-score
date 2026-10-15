@@ -74,6 +74,8 @@ export class GrowingBallScene implements Scene {
   private cycles = 0;
   private lastDraw = 0;
   private states = new Map<number, GrowState>();
+  /** recent rim impacts (for fading marks) */
+  private impacts: { x: number; y: number; t: number; pitch: number }[] = [];
   private respawnAt: number[] = [];
 
   init(svc: SceneServices): void {
@@ -92,6 +94,7 @@ export class GrowingBallScene implements Scene {
     this.cycles = 0;
     this.states.clear();
     this.respawnAt = [];
+    this.impacts = [];
     const w = this.host.world;
     w.clearColliders();
     w.params.restitution = 1;
@@ -161,6 +164,8 @@ export class GrowingBallScene implements Scene {
     if (frac > 0.05) this.host.playNote(tim.large, pitch, vel * (0.25 + frac * 0.75), e.x, 0.8);
     st.step++;
     st.lastPitch = pitch;
+    this.impacts.push({ x: e.x, y: e.y, t: this.host.simTime, pitch });
+    if (this.impacts.length > 16) this.impacts.shift();
     ballVisual(b).flash = 1;
     this.pulse = 1;
     this.svc.particles.burst(e.x, e.y, pitchColor(pal, pitch), 0.6, this.host.simTime, e.nx, e.ny);
@@ -233,7 +238,7 @@ export class GrowingBallScene implements Scene {
 
   bounds() {
     const b = this.values.arena === 'circle' ? this.R : this.R * 1.25;
-    return { minX: -this.R - 0.4, minY: -b - 0.4, maxX: this.R + 0.4, maxY: b + 0.4 };
+    return { minX: -this.R - 1.2, minY: -b - 1.2, maxX: this.R + 1.2, maxY: b + 1.2 };
   }
 
   render(dl: DrawList): void {
@@ -251,6 +256,25 @@ export class GrowingBallScene implements Scene {
       const b = this.R * 1.25;
       dl.rect(0, 0, a, b, 0, c, 0.85, 0.3, th, 0.15 + this.pulse * 0.3);
     }
+    // fading impact marks on the rim
+    for (const im of this.impacts) {
+      const age = now - im.t;
+      if (age > 2.5 || age < 0) continue;
+      const k = 1 - age / 2.5;
+      dl.glow(im.x, im.y, 0.9 + (1 - k) * 0.8, pitchColor(pal, im.pitch), k * 0.55);
+      dl.disc(im.x, im.y, 0.08, pitchColor(pal, im.pitch), k);
+    }
+    // melody dial: the pattern's steps around the outside, current step lit
+    const pat = PATTERNS[String(this.values.pattern)] ?? PATTERNS.arpeggio;
+    const st0 = this.host.world.balls.map((b) => this.states.get(b.id)).find((s) => s && !s.done);
+    const cur = st0 ? st0.step % pat.steps.length : -1;
+    const outer = (this.values.arena === 'circle' ? this.R : this.R * 1.25) + 0.75;
+    pat.steps.forEach((deg, i) => {
+      const a = Math.PI / 2 - (i / pat.steps.length) * Math.PI * 2;
+      const p = degreeToMidi(deg, Number(this.values.root), String(this.values.scale), 5);
+      const on = i === (cur - 1 + pat.steps.length) % pat.steps.length && cur >= 0;
+      dl.disc(Math.cos(a) * outer, Math.sin(a) * outer, on ? 0.2 : 0.12, pitchColor(pal, p), on ? 1 : 0.45);
+    });
     this.svc.trails.draw(dl, now);
     this.host.drawBalls(dl, now);
     if (this.svc.appearance().noteLabels) {

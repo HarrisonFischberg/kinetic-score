@@ -248,8 +248,8 @@ header select {
 
 .stage .badge {
   position: absolute;
-  bottom: 10px;
-  left: 10px;
+  top: 10px;
+  right: 10px;
   padding: 4px 9px;
   border-radius: 999px;
   font-size: 11px;
@@ -259,10 +259,14 @@ header select {
   border: 1px solid var(--line-strong);
   color: var(--dim);
   pointer-events: none;
-  max-width: calc(100% - 20px);
+  max-width: min(60%, 520px);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+#app.recording .stage .badge {
+  display: none;
 }
 
 .stage .rec-status {

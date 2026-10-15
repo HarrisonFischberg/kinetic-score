@@ -34,7 +34,7 @@ export class CascadeScene implements Scene {
     cooldown: 0.6,
     lifetime: 14,
     noteRate: 14,
-    gravity: 4,
+    gravity: 1.2,
     wallVoice: 'pluck',
     ballVoice: 'glass',
     scale: 'minorPent',

@@ -11,5 +11,10 @@
     "src",
     "tests",
     "scripts"
+  ],
+  "exclude": [
+    "scripts/browser-check.ts",
+    "scripts/capture.ts",
+    "scripts/capture-live.ts"
   ]
 }
