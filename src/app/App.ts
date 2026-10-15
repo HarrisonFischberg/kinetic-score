@@ -838,7 +838,6 @@ export class App {
     registerScore(s);
     const id = this.entry.id;
     this.scene.dispose();
-    this.scene = null as unknown as Scene;
     this.switchSceneFresh(id);
     const def = this.scene.params.find((d) => d.key === 'song');
     const opt = def?.options?.find((o) => o.value === s.id);
@@ -1068,24 +1067,18 @@ export class App {
     this.applyAppearance();
     (this.els.speedSel as HTMLSelectElement).value = String(this.settings.simSpeed);
     this.scene.dispose();
-    this.scene = null as unknown as Scene;
     this.switchSceneFresh(p.sceneId);
     this.layout();
     this.notify(`Loaded “${p.name}”`);
   }
 
+  /**
+   * Switch to a scene after the current one has already been disposed (project load, settings
+   * reset, score import): nothing of the old scene is saved over the newly loaded settings.
+   */
   private switchSceneFresh(id: string): void {
     const entry = sceneEntry(id) ?? SCENES[0];
-    const prevScene = this.scene;
-    if (!prevScene) {
-      // bypass saving values of the disposed scene
-      this.scene = { dispose() {}, params: [], values: {} } as unknown as Scene;
-      this.entry = entry;
-      const saved = this.settings.sceneValues;
-      this.switchScene(entry.id);
-      this.settings.sceneValues = saved;
-      return;
-    }
+    this.scene = null as unknown as Scene;
     this.switchScene(entry.id);
   }
 
@@ -1136,7 +1129,6 @@ export class App {
     this.applyAudioSettings();
     this.applyAppearance();
     this.scene.dispose();
-    this.scene = null as unknown as Scene;
     this.switchSceneFresh(keepScene);
     this.persist();
     this.notify('Settings reset to defaults.');

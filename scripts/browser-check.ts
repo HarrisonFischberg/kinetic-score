@@ -314,6 +314,31 @@ await check('persistence: a saved project survives a reload and loads back', asy
   return `found=${r.found} palette=${r.palette} scene=${r.scene}`;
 });
 
+await check('persistence: an edited Builder layout round-trips through a saved project', async () => {
+  const before = await ks<number>(
+    page,
+    `k.switchScene('builder');
+     const sc = k.debugScene();
+     const l = sc.getLayout();
+     l.elements.push({ id: 9999, kind: 'bumper', x1: 2, y1: -2, x2: 2, y2: -2, r: 0.6, music: { degree: 3, instrument: 'bell', velSens: 0.5, retrigger: 'cooldown', cooldownMs: 100, chord: 'none', sequence: false, seqStep: 1, seqLength: 4 } });
+     sc.setLayout(l, true);
+     k.saveProjectAs('Builder check');
+     return l.elements.length;`,
+  );
+  await ks(page, "k.switchScene('canon')");
+  const p2 = await newPage(1400, 900, false, page);
+  const after = await ks<number>(
+    p2,
+    `const list = JSON.parse(localStorage.getItem('kinetic-score/projects@1') || '[]');
+     const proj = list.find((p) => p.name === 'Builder check');
+     k.loadProject(proj);
+     return k.debugScene().getLayout().elements.length;`,
+  );
+  await p2.close();
+  if (after !== before) throw new Error(`layout had ${before} parts, loaded ${after}`);
+  return `${before} parts saved → ${after} parts after reload + load`;
+});
+
 await check('orbital sandbox: free-physics mode plays the song’s chimes and grows marbles', async () => {
   await ks(page, "k.switchScene('orbital'); k.setSceneParam('mode', 'sandbox');");
   await page.waitForTimeout(9000);
