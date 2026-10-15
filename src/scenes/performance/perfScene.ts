@@ -42,8 +42,8 @@ export interface Choreography {
   acts: Activation[];
   duration: number;
   bounds: Bounds;
-  /** camera follow target (anticipatory) */
-  focus?(t: number): { x: number; y: number; h: number };
+  /** camera follow target (anticipatory); aspect = width / height of the view */
+  focus?(t: number, aspect: number): { x: number; y: number; h: number };
   /** maximum plausible ball speed, for validation */
   maxSpeed: number;
   /** allowed distance between a ball and its activation point beyond its radius */
@@ -267,7 +267,7 @@ export class PerformanceScene implements Scene {
       }
     }
     if (this.svc.camera.mode === 'follow') {
-      const f = ch.focus?.(t) ?? this.defaultFocus(t);
+      const f = ch.focus?.(t, this.svc.camera.aspect) ?? this.defaultFocus(t);
       this.svc.camera.setFocus(f.x, f.y, f.h);
     }
     void TAU;

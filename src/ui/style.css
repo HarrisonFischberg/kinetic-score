@@ -676,17 +676,26 @@ header select {
 
 /* ---------- responsive ---------- */
 @media (max-width: 860px) {
-  :root {
-    --header-h: 50px;
-  }
   #app {
-    grid-template-rows: var(--header-h) minmax(0, 1fr) minmax(0, 42%);
+    grid-template-rows: auto minmax(0, 1fr) minmax(0, 40%);
     grid-template-columns: 1fr;
     grid-template-areas: 'header' 'stage' 'panel';
   }
   #app.panel-hidden {
-    grid-template-rows: var(--header-h) 1fr 0;
+    grid-template-rows: auto 1fr 0;
     grid-template-columns: 1fr;
+  }
+  header {
+    flex-wrap: wrap;
+    row-gap: 6px;
+    padding: 6px 8px;
+    overflow: visible;
+  }
+  header .spacer {
+    display: none;
+  }
+  .seg button {
+    padding: 5px 9px;
   }
   #app.clean {
     grid-template-rows: 0 1fr 0;

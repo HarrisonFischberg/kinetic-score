@@ -41,3 +41,32 @@ for (const f of FAMILIES) {
     }
   }
 }
+
+test('maze: every timed door is open whenever a marble is at it', async () => {
+  const { mazeFamily } = await import('../src/scenes/performance/maze.ts');
+  const { sampleActor } = await import('../src/choreography/core.ts');
+  for (const id of ['rondo-alla-turca', 'ode-to-joy']) {
+    const score = scores.find((s) => s.id === id)!;
+    const notes = timeNotes(score, 1, mazeFamily.leadIn);
+    const ch = mazeFamily.build(notes, { voicing: VOICINGS.classic.v, rng: new Rng(3), leadIn: mazeFamily.leadIn, score, tempo: 1 }) as ReturnType<typeof mazeFamily.build> & { doors: { ax: number; ay: number; bx: number; by: number; windows: [number, number][] }[] };
+    assert.ok(ch.doors.length > 0, 'maze has doors');
+    const s = { x: 0, y: 0, visible: false, alpha: 1, scale: 1 };
+    let checked = 0;
+    for (const b of ch.balls) {
+      const t0 = b.segs[0].t0;
+      const t1 = b.segs[b.segs.length - 1].t1;
+      for (let t = t0; t <= t1; t += 1 / 200) {
+        sampleActor(b, t, s);
+        for (const d of ch.doors) {
+          const mx = (d.ax + d.bx) / 2;
+          const my = (d.ay + d.by) / 2;
+          if (Math.hypot(s.x - mx, s.y - my) < b.r + 0.12) {
+            checked++;
+            assert.ok(d.windows.some(([w0, w1]) => t >= w0 && t <= w1), `${id}: door at (${mx.toFixed(2)},${my.toFixed(2)}) closed when ${b.id} passes at ${t.toFixed(3)}`);
+          }
+        }
+      }
+    }
+    assert.ok(checked > 0, 'marbles actually pass through doors');
+  }
+});

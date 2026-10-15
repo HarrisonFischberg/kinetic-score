@@ -321,7 +321,10 @@ export class App {
     this.camera.mode = 'overview';
     this.restart(true);
     this.camera.setBounds(scene.bounds(), true);
-    if (scene.preferredCamera === 'follow') this.camera.setMode('follow');
+    if (scene.preferredCamera === 'follow') {
+      this.camera.setMode('follow');
+      this.camera.snapNext = true;
+    }
     this.refreshHeader();
     this.buildPanel();
     this.persist();
@@ -410,6 +413,7 @@ export class App {
     this.transport.play();
     this.updatePlayButton();
     if (!silentRebuild) this.camera.setMode(this.camera.mode === 'manual' ? 'overview' : this.camera.mode);
+    if (this.camera.mode === 'follow') this.camera.snapNext = true;
   }
 
   /** playground timelines follow the sim-speed control; song performances always run at 1× (tempo is a scene setting) */

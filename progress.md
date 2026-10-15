@@ -44,6 +44,15 @@ was done and what was actually run/verified.
 - 5: Musical Maze, Orbital Classics, Ring Escape; computed song support with reasons; runtime
   choreography validation. Tests: 78 pass (scores, every family × supported song × tempo 1 and 0.8).
 
+- 6: engine tests (physics determinism/tunnelling/retrigger/sensors, transport, scheduler, Shepard,
+  settings, layouts, MIDI) — found and fixed a real bug: an event exactly at the pause instant was
+  replayed on resume (added `EventScheduler.resume`). Maze door-timing test. 95 tests pass.
+- 7: full headless-browser suite (26 checks: audio gating, scheduled-vs-due activations, pause/restart,
+  builder interactions, caps, Shepard direction, loop wrap, recording ×3 with audio/size/MIME checks,
+  screenshot, clean view, persistence across reload, mobile layout, all scenes) — 26/26, 0 console
+  errors. Follow-camera snap on start, aspect-aware stage framing, wrapping mobile header.
+  README and docs/VERIFICATION.md written.
+
 ## Song support per scene (computed by each family, also shown in the Song menu)
 - Canon Contraption, Melody Rain, Musical Maze: all 8 excerpts.
 - Orbital Classics: Prelude, Canon, Für Elise, Ode to Joy, Mountain King. Disabled (leaps too fast
@@ -51,8 +60,9 @@ was done and what was actually run/verified.
 - Ring Escape: Mountain King, Canon, Für Elise, Ode to Joy, Prelude. Disabled: Eine kleine,
   Brandenburg (notes too close together), Rondo alla turca (one pass too tight).
 
-## Remaining
-- Unit tests: physics determinism, transport/scheduler pause-resume, contact retrigger, spawn caps,
-  settings validation, Shepard math.
-- Browser checks: recording (MIME/extension/dimensions/audio), persistence reload, sync.
-- README with architecture, controls, rights; manual verification checklist.
+## Remaining / not verifiable here
+- Real-device checks listed in docs/VERIFICATION.md (hearing, recognisability, AV sync by eye,
+  Shepard perception, Safari/Firefox recording, touch devices, frame rate on real GPUs).
+- Optional score/MIDI import not implemented (documented).
+- `npm install` / Vite build could not be run here (registry blocked); the zero-dependency
+  build was verified instead.

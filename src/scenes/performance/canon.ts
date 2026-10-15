@@ -356,11 +356,13 @@ export const canonFamily: Family = {
       maxSpeed: 40,
       contactTol: 0.03,
       problems: b.problems,
-      focus(t: number) {
+      focus(t: number, aspect: number) {
         let k = 0;
         for (let i = 0; i < 4; i++) if (t >= focusStages[i].start) k = i;
-        if (finaleTime !== null && t >= finaleTime - 2.4) return { x: 0, y: bowlY + 2.2, h: 19 };
-        return { x: 0, y: focusStages[k].cy, h: HALF_H * 2 + 1.4 };
+        // frame a whole stage in any aspect (portrait views zoom out to fit its width)
+        const fitW = (w: number) => w / Math.max(0.3, aspect);
+        if (finaleTime !== null && t >= finaleTime - 2.4) return { x: 0, y: bowlY + 2.2, h: Math.max(19, fitW(HALF_W * 2 + 2.4)) };
+        return { x: 0, y: focusStages[k].cy, h: Math.max(HALF_H * 2 + 1.4, fitW(HALF_W * 2 + 1.2)) };
       },
     };
   },

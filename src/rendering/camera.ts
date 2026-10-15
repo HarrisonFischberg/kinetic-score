@@ -48,12 +48,22 @@ export class CameraController {
     this.vx = this.vy = this.vh = 0;
   }
 
+  /** when set, the next focus request jumps there instead of easing (scene start) */
+  snapNext = false;
+
   /** Scene supplies a focus point each frame (used in follow mode). */
   setFocus(x: number, y: number, h?: number): void {
     if (this.mode !== 'follow') return;
     this.targetX = x;
     this.targetY = y;
     this.targetH = h ?? this.followHeight;
+    if (this.snapNext) {
+      this.snapNext = false;
+      this.x = x;
+      this.y = y;
+      this.height = this.targetH;
+      this.vx = this.vy = this.vh = 0;
+    }
   }
 
   pan(dx: number, dy: number): void {
