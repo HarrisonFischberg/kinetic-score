@@ -1,5 +1,5 @@
 {
-  "schema": "kinetic-score/score@1",
+  "schema": "musical-marbles/score@1",
   "id": "prelude-c-major",
   "composer": "Johann Sebastian Bach",
   "title": "Prelude in C major",

@@ -1,6 +1,6 @@
-# Kinetic Score — original brief (condensed, all requirements kept)
+# Musical Marbles — original brief (condensed, all requirements kept)
 
-Goal: Build and verify Kinetic Score: a polished browser-based audiovisual playground and video studio featuring interactive ball physics, repeatable geometric sound generators, a controllable Shepard-tone illusion, kinetic machines performing verified public-domain classical excerpts, and synchronized audiovisual recording. Implement it fully; no plans/mockups/placeholders. Decide without follow-up questions.
+Goal: Build and verify Musical Marbles: a polished browser-based audiovisual playground and video studio featuring interactive ball physics, repeatable geometric sound generators, a controllable Shepard-tone illusion, kinetic machines performing verified public-domain classical excerpts, and synchronized audiovisual recording. Implement it fully; no plans/mockups/placeholders. Decide without follow-up questions.
 
 ## Workflow
 - Ralph /ralph-loop skipped (user choice). Bounded iterative loop, max 40 iterations, progress.md tracks completed work, actual test results, remaining work, blockers. Fix failures before expanding scope. No destructive cleanup. Commit meaningful progress; never secrets.

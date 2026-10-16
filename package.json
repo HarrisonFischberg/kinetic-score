@@ -1,9 +1,9 @@
 {
-  "name": "kinetic-score",
+  "name": "musical-marbles",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Kinetic Score \u2014 a browser audiovisual playground and video studio: ball physics, geometric sound generators, a Shepard-tone lab and kinetic machines performing public-domain classical excerpts.",
+  "description": "Musical Marbles \u2014 a browser audiovisual playground and video studio: ball physics, geometric sound generators, a Shepard-tone lab and kinetic machines performing public-domain classical excerpts.",
   "scripts": {
     "dev": "vite",
     "build": "npm run typecheck && vite build",

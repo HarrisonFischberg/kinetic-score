@@ -9,10 +9,10 @@ const page = await (await browser.newContext({ viewport: { width: w, height: h }
 const errs: string[] = [];
 page.on('pageerror', (e) => errs.push(e.message));
 await page.goto(process.env.BASE ?? 'http://localhost:5180/');
-await page.waitForFunction(() => !!(window as unknown as { kineticScore?: unknown }).kineticScore);
+await page.waitForFunction(() => !!(window as unknown as { musicalMarbles?: unknown }).musicalMarbles);
 await page.getByRole('button', { name: /Enable audio/ }).click();
 await page.evaluate(([id, sp]) => {
-  const k = (window as unknown as { kineticScore: { switchScene(id: string): void; settings: { simSpeed: number } } }).kineticScore;
+  const k = (window as unknown as { musicalMarbles: { switchScene(id: string): void; settings: { simSpeed: number } } }).musicalMarbles;
   k.settings.simSpeed = Number(sp);
   k.switchScene(id);
 }, [scene, speed]);

@@ -18,9 +18,9 @@ const browser = await chromium.launch({
 const results: { name: string; ok: boolean; detail: string }[] = [];
 const errors: string[] = [];
 
-/** run code against window.kineticScore inside the page */
+/** run code against window.musicalMarbles inside the page */
 async function ks<T>(page: Page, body: string, arg?: unknown): Promise<T> {
-  return page.evaluate(([b, a]) => new Function('k', 'a', b)((window as unknown as { kineticScore: unknown }).kineticScore, a), [body, arg] as const) as Promise<T>;
+  return page.evaluate(([b, a]) => new Function('k', 'a', b)((window as unknown as { musicalMarbles: unknown }).musicalMarbles, a), [body, arg] as const) as Promise<T>;
 }
 
 async function newPage(width = 1400, height = 900, clearStorage = true, sameContextAs?: Page): Promise<Page> {
@@ -35,7 +35,7 @@ async function newPage(width = 1400, height = 900, clearStorage = true, sameCont
     await page.evaluate(() => localStorage.clear());
     await page.reload();
   }
-  await page.waitForFunction(() => !!(window as unknown as { kineticScore?: unknown }).kineticScore);
+  await page.waitForFunction(() => !!(window as unknown as { musicalMarbles?: unknown }).musicalMarbles);
   await page.waitForTimeout(800);
   return page;
 }
@@ -535,7 +535,7 @@ await check('persistence: a saved project survives a reload and loads back', asy
   const p2 = await newPage(1400, 900, false, page);
   const r = await ks<{ found: boolean; palette: string; scene: string }>(
     p2,
-    `const list = JSON.parse(localStorage.getItem('kinetic-score/projects@1') || '[]');
+    `const list = JSON.parse(localStorage.getItem('musical-marbles/projects@1') || '[]');
      const proj = list.find((p) => p.name === 'Browser check');
      if (proj) k.loadProject(proj);
      return { found: !!proj, palette: k.settings.appearance.palette, scene: k.debugState().scene };`,
@@ -543,6 +543,32 @@ await check('persistence: a saved project survives a reload and loads back', asy
   await p2.close();
   if (!r.found || r.palette !== 'ember' || r.scene !== 'maze') throw new Error(JSON.stringify(r));
   return `found=${r.found} palette=${r.palette} scene=${r.scene}`;
+});
+
+await check('persistence: settings and projects saved under the former name (kinetic-score) carry over', async () => {
+  const p = await newPage();
+  const s = await p.evaluate(() => JSON.parse(localStorage.getItem('musical-marbles/settings@1') ?? 'null'));
+  s.schema = 'kinetic-score/settings@1';
+  s.appearance.palette = 'ember';
+  // a returning visitor's browser: only the old keys exist when the app starts
+  await p.context().addInitScript((old) => {
+    if (sessionStorage.getItem('seeded')) return;
+    sessionStorage.setItem('seeded', '1');
+    localStorage.clear();
+    localStorage.setItem('kinetic-score/settings@1', JSON.stringify(old));
+    localStorage.setItem('kinetic-score/projects@1', JSON.stringify([{ schema: 'kinetic-score/project@1', name: 'Old save', savedAt: '', sceneId: 'cascade', settings: old }]));
+  }, s);
+  await p.reload();
+  await p.waitForFunction(() => !!(window as unknown as { musicalMarbles?: unknown }).musicalMarbles);
+  await p.waitForTimeout(600);
+  const r = await ks<{ palette: string; projects: string[]; migrated: boolean }>(
+    p,
+    `return { palette: k.settings.appearance.palette, projects: JSON.parse(localStorage.getItem('musical-marbles/projects@1') || '[]').map((x) => x.name), migrated: !!localStorage.getItem('musical-marbles/settings@1') };`,
+  );
+  await p.context().close();
+  if (r.palette !== 'ember') throw new Error(`palette ${r.palette}`);
+  if (!r.projects.includes('Old save') || !r.migrated) throw new Error(JSON.stringify(r));
+  return `palette=${r.palette}, projects=${r.projects.join(',')}, migrated to the new keys`;
 });
 
 await check('persistence: an edited Builder layout round-trips through a saved project', async () => {
@@ -560,7 +586,7 @@ await check('persistence: an edited Builder layout round-trips through a saved p
   const p2 = await newPage(1400, 900, false, page);
   const after = await ks<number>(
     p2,
-    `const list = JSON.parse(localStorage.getItem('kinetic-score/projects@1') || '[]');
+    `const list = JSON.parse(localStorage.getItem('musical-marbles/projects@1') || '[]');
      const proj = list.find((p) => p.name === 'Builder check');
      k.loadProject(proj);
      return k.debugScene().getLayout().elements.length;`,

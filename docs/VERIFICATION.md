@@ -3,7 +3,7 @@
 ## Automated
 
 ### Unit tests — `npm test` (or `node --test "tests/**/*.test.ts"`)
-104 tests, all passing at the time of writing. Coverage: score data and validation, timing,
+105 tests, all passing at the time of writing. Coverage: score data and validation, timing,
 choreography plausibility for every performance family × supported song × tempo (1.0, 0.8),
 maze door timing, physics determinism/tunnelling/retrigger/sensors, stepper cap, safe spawning,
 transport and scheduler (pause/resume/seek/reset, no duplicates or reordering), Shepard maths (incl. per-layer continuity across phase wraps and the worklet's per-sample output),
@@ -18,12 +18,12 @@ passed 3/3 when re-run alone).
 
 ### Live site
 Published to GitHub Pages by `.github/workflows/pages.yml` (tests + Vite build + deploy all green).
-Confirmed by the owner to load in a real browser at https://harrisonfischberg.github.io/kinetic-score/.
+Confirmed by the owner to load in a real browser at https://harrisonfischberg.github.io/musical-marbles/.
 The manual checklist below still applies.
 
 ### Headless browser — `node scripts/browser-check.ts`
 Chromium via Playwright, software WebGL (SwiftShader), `--autoplay-policy=no-user-gesture-required`
-and the default virtual audio device. Latest run: **33/33 passed, 0 console errors**.
+and the default virtual audio device. Latest run: **34/34 passed, 0 console errors**.
 
 | Check | Result (latest run) |
 |---|---|
@@ -48,6 +48,7 @@ and the default virtual audio device. Latest run: **33/33 passed, 0 console erro
 | PNG screenshot downloads | pass |
 | Clean view hides chrome; Esc restores | pass |
 | Persistence: saved project survives a reload and loads back (palette + scene) | pass |
+| Persistence: settings and projects saved under the former name (`kinetic-score/…`) load and migrate | pass |
 | Persistence: an edited Builder layout round-trips through a saved project | pass |
 | Score import: hostile JSON rejected; valid JSON becomes a playable song | pass |
 | Orbital Classics sandbox mode: free physics plays the song's chimes; badge says interpretive | pass |

@@ -8,16 +8,16 @@ const page = await (await browser.newContext({ viewport: { width: w, height: h }
 const errs: string[] = [];
 page.on('pageerror', (e) => errs.push(e.message));
 await page.goto(process.env.BASE ?? 'http://localhost:5180/');
-await page.waitForFunction(() => !!(window as unknown as { kineticScore?: unknown }).kineticScore);
+await page.waitForFunction(() => !!(window as unknown as { musicalMarbles?: unknown }).musicalMarbles);
 await page.getByRole('button', { name: 'Continue without sound' }).click();
 await page.evaluate(([id, sg]) => {
-  const k = (window as unknown as { kineticScore: Record<string, (...a: unknown[]) => unknown> }).kineticScore;
+  const k = (window as unknown as { musicalMarbles: Record<string, (...a: unknown[]) => unknown> }).musicalMarbles;
   k.switchScene(id);
   k.setSceneParam('song', sg);
 }, [scene, song]);
 await page.keyboard.press('h');
 for (const t of times) {
-  await page.evaluate((tt) => (window as unknown as { kineticScore: { debugSeek(t: number): void } }).kineticScore.debugSeek(tt), t);
+  await page.evaluate((tt) => (window as unknown as { musicalMarbles: { debugSeek(t: number): void } }).musicalMarbles.debugSeek(tt), t);
   await page.waitForTimeout(1500);
   await page.screenshot({ path: `${out}-${t}.png` });
 }

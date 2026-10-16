@@ -1,4 +1,4 @@
-# Kinetic Score
+# Musical Marbles
 
 A browser-based audiovisual playground and video studio: marbles, machines and music.
 
@@ -17,9 +17,22 @@ microphone or camera. All sound is synthesised live with the Web Audio API.
 
 ## Run it
 
-**Live site:** https://harrisonfischberg.github.io/kinetic-score/ — every push to `main` is tested, built with Vite and published by `.github/workflows/pages.yml`.
+**Live site:** https://harrisonfischberg.github.io/musical-marbles/ — every push to `main` is tested, built with Vite and published by `.github/workflows/pages.yml`.
 
 Requires Node.js **22.18 or newer** (the build scripts are TypeScript run directly by Node).
+
+### Get it on your computer
+
+```bash
+cd ~/projects
+git clone https://github.com/HarrisonFischberg/musical-marbles.git
+cd musical-marbles
+npm install
+npm run dev        # then open the address it prints (usually http://localhost:5173/)
+```
+
+Musical Marbles was previously called *Kinetic Score*. Settings, saved projects and exported
+JSON files from that name still load (they are migrated to the new `musical-marbles/…` ids).
 
 ### Normal setup (Vite)
 
@@ -222,7 +235,7 @@ Settings (appearance, sound, export, seed, per-scene values, the builder layout)
 `localStorage` when available. **Projects & settings** lets you save named projects, copy a
 project as JSON (with a textarea fallback when the clipboard is blocked) and import pasted JSON.
 Imports are parsed and validated field by field against a versioned schema
-(`kinetic-score/project@1`, `kinetic-score/settings@1`, `kinetic-score/layout@1`); invalid
+(`musical-marbles/project@1`, `musical-marbles/settings@1`, `musical-marbles/layout@1`); invalid
 fields are dropped with a message and nothing is ever executed. Storage failures (private mode,
 quota) are reported and the app keeps working.
 
@@ -260,7 +273,7 @@ and no verified public-domain or attribution-only note data was available, so th
 app as disabled with that reason rather than being reconstructed from memory.
 
 **Importing a score (optional):** in a performance scene, *Music & source → Import a score*
-accepts a `kinetic-score/score@1` JSON object (same shape as the files in `public/scores/`). It is
+accepts a `musical-marbles/score@1` JSON object (same shape as the files in `public/scores/`). It is
 validated field by field as plain data (never executed), renamed `import-…`, offered in the Song
 menu for this session only, and you are responsible for the rights to what you import. MIDI import
 is not offered in the app (the bundled `scripts/build-scores.ts` shows how MIDI was converted).

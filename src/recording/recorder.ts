@@ -54,7 +54,7 @@ export class Recorder {
   private chunks: Blob[] = [];
   private videoTrack: MediaStreamTrack | null = null;
   private startedAt = 0;
-  private meta = { width: 0, height: 0, base: 'kinetic-score', hasAudio: false };
+  private meta = { width: 0, height: 0, base: 'musical-marbles', hasAudio: false };
   last: RecordingResult | null = null;
   onDone: (r: RecordingResult) => void = () => {};
   onError: (msg: string) => void = () => {};

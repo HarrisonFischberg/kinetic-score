@@ -277,9 +277,23 @@ test('settings: defaults validate; hostile or broken input is rejected or saniti
   assert.equal(r.settings.audio.master, d.audio.master);
   assert.equal(r.settings.seed, d.seed);
   assert.equal(r.settings.sceneValues['x y'], undefined);
-  const proj = validateProject({ schema: 'kinetic-score/project@1', name: 'x', sceneId: 'canon', settings: d });
+  const proj = validateProject({ schema: 'musical-marbles/project@1', name: 'x', sceneId: 'canon', settings: d });
   assert.ok(proj.project);
-  assert.ok(validateProject({ schema: 'kinetic-score/project@1', sceneId: '../etc', settings: d }).errors.length);
+  assert.ok(validateProject({ schema: 'musical-marbles/project@1', sceneId: '../etc', settings: d }).errors.length);
+});
+
+test('files and settings saved under the former name (Kinetic Score) still load, migrated', () => {
+  const d = defaultSettings();
+  const legacyLayout = { ...BUILDER_PRESETS[0].make(), schema: 'kinetic-score/layout@1' };
+  assert.deepEqual(validateLayout(legacyLayout), []);
+  const legacySettings = { ...JSON.parse(JSON.stringify(d)), schema: 'kinetic-score/settings@1', layout: legacyLayout };
+  const r = sanitizeSettings(legacySettings);
+  assert.deepEqual(r.errors, []);
+  assert.equal(r.settings.schema, 'musical-marbles/settings@1');
+  assert.equal(r.settings.layout?.schema, 'musical-marbles/layout@1');
+  const proj = validateProject({ schema: 'kinetic-score/project@1', name: 'old', sceneId: 'builder', settings: legacySettings });
+  assert.equal(proj.project?.schema, 'musical-marbles/project@1');
+  assert.ok(validateProject({ schema: 'someone-else/project@1', sceneId: 'builder', settings: d }).errors.length);
 });
 
 test('layouts: presets validate; malformed layouts are rejected', () => {

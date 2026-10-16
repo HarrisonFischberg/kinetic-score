@@ -423,7 +423,7 @@ function build(cfg: PieceCfg): ScoreData {
   const arrangement = [...cfg.arrangement];
   if (dropped) arrangement.push(`${dropped} ornament/grace notes shorter than ${cfg.minDurQ} quarter notes removed.`);
   return {
-    schema: 'kinetic-score/score@1',
+    schema: 'musical-marbles/score@1',
     id: cfg.id,
     composer: cfg.composer,
     title: cfg.title,

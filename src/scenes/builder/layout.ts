@@ -1,4 +1,5 @@
 // Editable playground layout: plain data, versioned and validated on import.
+import { schemaIs } from '../../core/schema.ts';
 import { isInstrument, type InstrumentId } from '../../audio/instruments.ts';
 import type { ChordKind } from '../../music/scales.ts';
 
@@ -40,7 +41,7 @@ export interface Spawner {
 }
 
 export interface Layout {
-  schema: 'kinetic-score/layout@1';
+  schema: 'musical-marbles/layout@1';
   name: string;
   spawner: Spawner;
   elements: LayoutElement[];
@@ -68,7 +69,7 @@ export function validateLayout(raw: unknown): string[] {
   const errs: string[] = [];
   if (!raw || typeof raw !== 'object') return ['Layout must be a JSON object.'];
   const l = raw as Record<string, unknown>;
-  if (l.schema !== 'kinetic-score/layout@1') errs.push('schema must be "kinetic-score/layout@1".');
+  if (!schemaIs(l.schema, 'layout')) errs.push('schema must be "musical-marbles/layout@1".');
   if (typeof l.name !== 'string' || l.name.length > 80) errs.push('name must be a string (≤80 chars).');
   const sp = l.spawner as Record<string, unknown> | undefined;
   if (!sp || !num(sp.x, -LIMIT, LIMIT) || !num(sp.y, -LIMIT, LIMIT) || !num(sp.angle, -10, 10)) errs.push('spawner needs numeric x, y, angle.');

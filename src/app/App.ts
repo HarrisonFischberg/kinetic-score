@@ -87,7 +87,7 @@ export class App {
     try {
       this.renderer = new Renderer(this.canvas);
     } catch (e) {
-      this.fatal(`WebGL could not start (${e instanceof Error ? e.message : String(e)}). Kinetic Score needs a browser with WebGL 2 enabled.`);
+      this.fatal(`WebGL could not start (${e instanceof Error ? e.message : String(e)}). Musical Marbles needs a browser with WebGL 2 enabled.`);
       return;
     }
     const lib = await loadLibrary();
@@ -118,7 +118,7 @@ export class App {
 
   private fatal(msg: string): void {
     clear(this.stage);
-    this.stage.append(h('div', { class: 'overlay' }, h('div', { class: 'card' }, h('h1', {}, 'Kinetic Score'), h('p', {}, msg))));
+    this.stage.append(h('div', { class: 'overlay' }, h('div', { class: 'card' }, h('h1', {}, 'Musical Marbles'), h('p', {}, msg))));
   }
 
   // ------------------------------------------------------------------ chrome
@@ -148,10 +148,10 @@ export class App {
     const shot = h('button', { class: 'hbtn icon', type: 'button', title: 'Save a PNG screenshot', 'aria-label': 'Screenshot', onclick: () => this.screenshot() }, '📷');
     const cleanBtn = h('button', { class: 'hbtn icon', type: 'button', title: 'Clean view — hide all controls (Esc to leave)', 'aria-label': 'Clean view', onclick: () => this.setClean(true) }, '⛶');
     const panelBtn = h('button', { class: 'hbtn icon', type: 'button', title: 'Show / hide controls (H)', 'aria-label': 'Toggle controls panel', onclick: () => this.togglePanel() }, '☰');
-    const header = h('header', {}, h('div', { class: 'brand' }, h('span', { class: 'dot' }), h('span', { class: 'hide-narrow' }, 'Kinetic Score')), modeSeg, sceneSel, songSel, play, restart, step, speedSel, time, h('div', { class: 'spacer' }), audioBtn, rec, shot, cleanBtn, panelBtn);
+    const header = h('header', {}, h('div', { class: 'brand' }, h('span', { class: 'dot' }), h('span', { class: 'hide-narrow' }, 'Musical Marbles')), modeSeg, sceneSel, songSel, play, restart, step, speedSel, time, h('div', { class: 'spacer' }), audioBtn, rec, shot, cleanBtn, panelBtn);
     this.els = { modeSeg, sceneSel, songSel, play, restart, step, time, speedSel, audioBtn, rec, shot };
 
-    this.canvas = h('canvas', { tabindex: '0', 'aria-label': 'Kinetic Score stage. Click to interact; wheel to zoom; right-drag to pan.' });
+    this.canvas = h('canvas', { tabindex: '0', 'aria-label': 'Musical Marbles stage. Click to interact; wheel to zoom; right-drag to pan.' });
     this.frameBox = h('div', { class: 'framebox' }, this.canvas);
     this.badge = h('div', { class: 'badge' });
     this.recStatus = h('div', { class: 'rec-status', role: 'status' }, h('span', { class: 'led' }), h('span', { class: 'rec-time' }, 'REC 0:00'), h('button', { class: 'btn', type: 'button', onclick: () => this.stopRecording() }, 'Stop'));
@@ -175,7 +175,7 @@ export class App {
       h(
         'div',
         { class: 'card' },
-        h('h1', {}, 'Kinetic Score'),
+        h('h1', {}, 'Musical Marbles'),
         h('p', {}, 'Marbles, machines and music. Build sound sculptures in the Playground, or watch kinetic contraptions perform public-domain classics in Performance mode. Nothing makes sound until you say so.'),
         h('div', { class: 'row' }, enable, supported ? silent : null),
         h('small', {}, supported ? 'Audio is synthesised live in your browser. Space play/pause · R restart · H controls' : 'Web Audio is not available in this browser — visuals only.'),
@@ -814,7 +814,7 @@ export class App {
     const unavailable = songDef?.options?.filter((o) => o.disabled) ?? [];
     if (unavailable.length) this.songInfo.append(h('p', { class: 'note' }, 'Not available in this scene: ' + unavailable.map((o) => `${o.label} (${o.disabled})`).join('; ')));
     // optional: import note-event JSON (validated data only, kept for this session)
-    const ta = h('textarea', { 'aria-label': 'Score JSON to import', spellcheck: false, placeholder: 'Paste a kinetic-score/score@1 JSON object' }) as HTMLTextAreaElement;
+    const ta = h('textarea', { 'aria-label': 'Score JSON to import', spellcheck: false, placeholder: 'Paste a musical-marbles/score@1 JSON object' }) as HTMLTextAreaElement;
     const msg = h('p', { class: 'note' }, 'You are responsible for the rights to anything you import. Imported scores are validated as plain data (never executed) and kept only for this session.');
     this.songInfo.append(
       h('div', { class: 'group-title' }, 'Import a score (optional)'),
@@ -1056,7 +1056,7 @@ export class App {
 
   private currentProject(name: string): Project {
     this.saveSceneValues();
-    return { schema: 'kinetic-score/project@1', name: name || 'Untitled', savedAt: new Date().toISOString(), sceneId: this.entry.id, settings: JSON.parse(JSON.stringify(this.settings)) as AppSettings };
+    return { schema: 'musical-marbles/project@1', name: name || 'Untitled', savedAt: new Date().toISOString(), sceneId: this.entry.id, settings: JSON.parse(JSON.stringify(this.settings)) as AppSettings };
   }
 
   private saveProjectAs(name: string): void {
@@ -1165,7 +1165,7 @@ export class App {
     box.append(
       h('div', { class: 'group-title' }, 'Keyboard'),
       h('p', { class: 'note' }, 'Space play/pause · R restart · H show/hide controls · Esc leave clean view · . single step · Builder: E edit/play, Delete remove, D duplicate, Ctrl+Z / Ctrl+Shift+Z undo/redo'),
-      h('p', { class: 'note' }, 'Kinetic Score runs entirely in your browser: no accounts, analytics, network audio or microphone/camera access. three.js © its authors (MIT).'),
+      h('p', { class: 'note' }, 'Musical Marbles runs entirely in your browser: no accounts, analytics, network audio or microphone/camera access. three.js © its authors (MIT).'),
     );
     return box;
   }
@@ -1244,7 +1244,7 @@ export class App {
   private beginRecording(mode: 'manual' | 'timed' | 'performance' | 'loop'): void {
     const [w, h2] = this.recordingSize!;
     const perf = this.scene.performance?.();
-    const base = `kinetic-score_${this.entry.id}${perf?.songId ? '_' + perf.songId : ''}${mode === 'loop' ? '_loop' : ''}`;
+    const base = `musical-marbles_${this.entry.id}${perf?.songId ? '_' + perf.songId : ''}${mode === 'loop' ? '_loop' : ''}`;
     const err = this.recorder.start(this.canvas, this.audio.recordingStream, this.settings.export.fps, w, h2, base);
     if (err) {
       this.notify(err, 'warn');
@@ -1346,7 +1346,7 @@ export class App {
     this.canvas.toBlob((blob) => {
       if (!blob) return this.notify('Screenshot failed.', 'warn');
       const stamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
-      downloadBlob(blob, `kinetic-score_${this.entry.id}_${w}x${h2}_${stamp}.png`);
+      downloadBlob(blob, `musical-marbles_${this.entry.id}_${w}x${h2}_${stamp}.png`);
       this.notify('Screenshot saved');
     }, 'image/png');
     if (restore) this.renderer.setPixelSize(restore[0], restore[1]);

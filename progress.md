@@ -1,4 +1,4 @@
-# Kinetic Score — progress
+# Musical Marbles — progress
 
 Bounded iterative loop (max 40 iterations; Ralph plugin skipped by user choice). Each entry lists what
 was done and what was actually run/verified.
@@ -91,7 +91,12 @@ was done and what was actually run/verified.
   back; Chromium uses the worklet; browser suite 33/33. (Headless live capture was unusable for
   this: its audio thread dropped render quanta for both old and new builds.) Not auditioned.
 
-Iterations used: 15 of 40.
+- 16: renamed the app from Kinetic Score to Musical Marbles everywhere (UI, page title, package,
+  storage keys, schema ids, export file names, debug handle, docs, GitHub repo + Pages URL). Old
+  `kinetic-score/…` files and browser storage are still accepted and migrated (new unit test +
+  browser check). Verified: 105/105 unit tests, browser checks pass (incl. migration).
+
+Iterations used: 16 of 40.
 
 ## Song support per scene (computed by each family, also shown in the Song menu)
 - Canon Contraption, Melody Rain, Musical Maze: all 8 excerpts.

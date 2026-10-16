@@ -1,5 +1,6 @@
 // Versioned settings + project schema with defensive validation. Imported JSON is
 // only ever parsed and checked field-by-field; nothing is executed or eval'd.
+import { legacyKeys, schemaIs } from '../core/schema.ts';
 import { INSTRUMENTS, type InstrumentId } from '../audio/instruments.ts';
 import { defaultAppearance, type Appearance, type ParamValue } from '../scenes/types.ts';
 import { PALETTES } from '../rendering/palette.ts';
@@ -30,7 +31,7 @@ export interface AudioSettings {
 }
 
 export interface AppSettings {
-  schema: 'kinetic-score/settings@1';
+  schema: 'musical-marbles/settings@1';
   seed: number;
   appearance: Appearance;
   audio: AudioSettings;
@@ -42,7 +43,7 @@ export interface AppSettings {
 }
 
 export interface Project {
-  schema: 'kinetic-score/project@1';
+  schema: 'musical-marbles/project@1';
   name: string;
   savedAt: string;
   sceneId: string;
@@ -59,7 +60,7 @@ export function defaultSettings(): AppSettings {
   const inst = {} as Record<InstrumentId, number>;
   for (const i of INSTRUMENTS) inst[i.id] = 0.8;
   return {
-    schema: 'kinetic-score/settings@1',
+    schema: 'musical-marbles/settings@1',
     seed: 20240917,
     appearance: defaultAppearance(),
     audio: { master: 0.8, muted: false, ambience: true, mech: 0.35, inst },
@@ -83,7 +84,7 @@ export function sanitizeSettings(raw: unknown): { settings: AppSettings; warning
   const errors: string[] = [];
   if (!raw || typeof raw !== 'object') return { settings: s, warnings, errors: ['Settings must be a JSON object.'] };
   const r = raw as Record<string, unknown>;
-  if (r.schema !== 'kinetic-score/settings@1') return { settings: s, warnings, errors: ['Unsupported settings schema (expected kinetic-score/settings@1).'] };
+  if (!schemaIs(r.schema, 'settings')) return { settings: s, warnings, errors: ['Unsupported settings schema (expected musical-marbles/settings@1).'] };
   if (isNum(r.seed, 0, 0xffffffff)) s.seed = Math.floor(r.seed);
   else if (r.seed !== undefined) warnings.push('seed ignored');
   if (isNum(r.simSpeed, 0.1, 4)) s.simSpeed = r.simSpeed;
@@ -134,7 +135,7 @@ export function sanitizeSettings(raw: unknown): { settings: AppSettings; warning
   if (r.layout !== undefined && r.layout !== null) {
     const errs = validateLayout(r.layout);
     if (errs.length) warnings.push(`Builder layout ignored: ${errs[0]}`);
-    else s.layout = r.layout as Layout;
+    else s.layout = { ...(r.layout as Layout), schema: 'musical-marbles/layout@1' };
   }
   return { settings: s, warnings, errors };
 }
@@ -142,12 +143,12 @@ export function sanitizeSettings(raw: unknown): { settings: AppSettings; warning
 export function validateProject(raw: unknown): { project: Project | null; errors: string[]; warnings: string[] } {
   if (!raw || typeof raw !== 'object') return { project: null, errors: ['Project must be a JSON object.'], warnings: [] };
   const r = raw as Record<string, unknown>;
-  if (r.schema !== 'kinetic-score/project@1') return { project: null, errors: ['Not a Kinetic Score project (schema must be kinetic-score/project@1).'], warnings: [] };
+  if (!schemaIs(r.schema, 'project')) return { project: null, errors: ['Not a Musical Marbles project (schema must be musical-marbles/project@1).'], warnings: [] };
   if (typeof r.sceneId !== 'string' || !/^[a-z0-9-]{1,40}$/.test(r.sceneId)) return { project: null, errors: ['sceneId is missing or invalid.'], warnings: [] };
   const { settings, warnings, errors } = sanitizeSettings(r.settings);
   if (errors.length) return { project: null, errors, warnings };
   return {
-    project: { schema: 'kinetic-score/project@1', name: typeof r.name === 'string' ? r.name.slice(0, 80) : 'Untitled', savedAt: typeof r.savedAt === 'string' ? r.savedAt.slice(0, 40) : '', sceneId: r.sceneId, settings },
+    project: { schema: 'musical-marbles/project@1', name: typeof r.name === 'string' ? r.name.slice(0, 80) : 'Untitled', savedAt: typeof r.savedAt === 'string' ? r.savedAt.slice(0, 40) : '', sceneId: r.sceneId, settings },
     errors: [],
     warnings,
   };
@@ -155,8 +156,25 @@ export function validateProject(raw: unknown): { project: Project | null; errors
 
 // ---- storage (all access guarded: private mode / quota / disabled storage) ----
 
-const KEY = 'kinetic-score/settings@1';
-const SLOTS = 'kinetic-score/projects@1';
+const KEY = 'musical-marbles/settings@1';
+const SLOTS = 'musical-marbles/projects@1';
+
+/** read a storage key, migrating a value saved under the app's former name */
+function readKey(key: string): string | null {
+  const v = localStorage.getItem(key);
+  if (v !== null) return v;
+  for (const old of legacyKeys(key)) {
+    const o = localStorage.getItem(old);
+    if (o === null) continue;
+    try {
+      localStorage.setItem(key, o);
+    } catch {
+      /* quota: still use the old value this time */
+    }
+    return o;
+  }
+  return null;
+}
 
 export function storageAvailable(): boolean {
   try {
@@ -171,7 +189,7 @@ export function storageAvailable(): boolean {
 
 export function loadSettings(): { settings: AppSettings; warnings: string[] } {
   try {
-    const txt = localStorage.getItem(KEY);
+    const txt = readKey(KEY);
     if (!txt) return { settings: defaultSettings(), warnings: [] };
     const { settings, warnings, errors } = sanitizeSettings(JSON.parse(txt));
     return { settings, warnings: [...errors, ...warnings] };
@@ -191,7 +209,7 @@ export function saveSettings(s: AppSettings): boolean {
 
 export function listProjects(): Project[] {
   try {
-    const arr = JSON.parse(localStorage.getItem(SLOTS) ?? '[]') as unknown[];
+    const arr = JSON.parse(readKey(SLOTS) ?? '[]') as unknown[];
     if (!Array.isArray(arr)) return [];
     return arr.map((p) => validateProject(p).project).filter((p): p is Project => !!p);
   } catch {

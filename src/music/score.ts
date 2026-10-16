@@ -1,4 +1,5 @@
 // Score data model, validation and timing helpers shared by every performance scene.
+import { schemaIs } from '../core/schema.ts';
 
 export type VoiceRole = 'melody' | 'counter' | 'accomp' | 'bass';
 export const VOICE_ROLES: readonly VoiceRole[] = ['melody', 'counter', 'accomp', 'bass'];
@@ -27,7 +28,7 @@ export interface ScoreSource {
 }
 
 export interface ScoreData {
-  schema: 'kinetic-score/score@1';
+  schema: 'musical-marbles/score@1';
   id: string;
   composer: string;
   title: string;
@@ -78,7 +79,7 @@ export function validateScore(raw: unknown): string[] {
   const errs: string[] = [];
   if (!raw || typeof raw !== 'object') return ['Score must be a JSON object.'];
   const s = raw as Record<string, unknown>;
-  if (s.schema !== 'kinetic-score/score@1') errs.push('schema must be "kinetic-score/score@1".');
+  if (!schemaIs(s.schema, 'score')) errs.push('schema must be "musical-marbles/score@1".');
   for (const k of ['id', 'composer', 'title', 'work', 'movement', 'excerpt']) {
     if (typeof s[k] !== 'string' || !(s[k] as string).length || (s[k] as string).length > 300) errs.push(`${k} must be a non-empty string (≤300 chars).`);
   }

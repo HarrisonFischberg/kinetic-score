@@ -162,7 +162,7 @@ class ShepardProcessor extends AudioWorkletProcessor {
     return true;
   }
 }
-registerProcessor('kinetic-shepard', ShepardProcessor);
+registerProcessor('musical-marbles-shepard', ShepardProcessor);
 `;
 
 export class ShepardEngine {
@@ -198,7 +198,7 @@ export class ShepardEngine {
         .addModule(url)
         .then(() => {
           if (this.ctx !== ctx || !this.filter) return;
-          this.node = new AudioWorkletNode(ctx, 'kinetic-shepard', { numberOfInputs: 0, outputChannelCount: [1] });
+          this.node = new AudioWorkletNode(ctx, 'musical-marbles-shepard', { numberOfInputs: 0, outputChannelCount: [1] });
           this.node.connect(this.filter);
         })
         .catch(() => this.useFallback())

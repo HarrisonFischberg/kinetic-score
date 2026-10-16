@@ -1,5 +1,5 @@
 {
-  "schema": "kinetic-score/score@1",
+  "schema": "musical-marbles/score@1",
   "id": "canon-in-d",
   "composer": "Johann Pachelbel",
   "title": "Canon in D",

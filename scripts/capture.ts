@@ -8,13 +8,13 @@ const errs: string[] = [];
 page.on('pageerror', (e) => errs.push(e.message));
 page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
 await page.goto(process.env.BASE ?? 'http://localhost:5180/');
-await page.waitForFunction(() => !!(window as any).kineticScore);
+await page.waitForFunction(() => !!(window as any).musicalMarbles);
 await page.waitForTimeout(500);
 await page.getByRole('button', { name: 'Continue without sound' }).click();
-await page.evaluate((id) => (window as any).kineticScore.switchScene(id), scene);
+await page.evaluate((id) => (window as any).musicalMarbles.switchScene(id), scene);
 await page.keyboard.press('h');
 for (const t of times) {
-  await page.evaluate((tt) => { const a = (window as any).kineticScore; a.debugSeek(tt); }, t);
+  await page.evaluate((tt) => { const a = (window as any).musicalMarbles; a.debugSeek(tt); }, t);
   await page.waitForTimeout(1600);
   await page.screenshot({ path: `${out}-${t}.png` });
 }

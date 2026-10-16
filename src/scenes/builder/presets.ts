@@ -30,7 +30,7 @@ function chimeStairs(): Layout {
   els.push(el('bumper', 4.2, -6.3, 0, 0, 0.55, m(5, 'bell')));
   els.push(el('funnel', -3, -7.2, 3, -7.2, 0.45));
   els.push(el('ramp', -7.8, -9.4, 7.8, -9.4));
-  return { schema: 'kinetic-score/layout@1', name: 'Chime staircase', spawner: { x: -6.2, y: 9.6, angle: -0.25 }, elements: els };
+  return { schema: 'musical-marbles/layout@1', name: 'Chime staircase', spawner: { x: -6.2, y: 9.6, angle: -0.25 }, elements: els };
 }
 
 function bumperGarden(): Layout {
@@ -49,7 +49,7 @@ function bumperGarden(): Layout {
   }
   els.push(el('pad', -7.8, -7.5, -2, -9, 0, m(-5, 'pluck')));
   els.push(el('pad', 7.8, -7.5, 2, -9, 0, m(-3, 'pluck')));
-  return { schema: 'kinetic-score/layout@1', name: 'Bumper garden', spawner: { x: 0, y: 10, angle: -Math.PI / 2 }, elements: els };
+  return { schema: 'musical-marbles/layout@1', name: 'Bumper garden', spawner: { x: 0, y: 10, angle: -Math.PI / 2 }, elements: els };
 }
 
 function sequencerRun(): Layout {
@@ -65,12 +65,12 @@ function sequencerRun(): Layout {
   els.push(el('ramp', -5, -3, 5, -5));
   els.push(el('bumper', 6.3, -5.4, 0, 0, 0.7, m(-1, 'bell', { sequence: true, seqStep: 1, seqLength: 3 })));
   els.push(el('funnel', -4, -7, 2, -7, 0.4));
-  return { schema: 'kinetic-score/layout@1', name: 'Sequencer run', spawner: { x: -6.8, y: 9.8, angle: -0.15 }, elements: els };
+  return { schema: 'musical-marbles/layout@1', name: 'Sequencer run', spawner: { x: -6.8, y: 9.8, angle: -0.15 }, elements: els };
 }
 
 function blank(): Layout {
   nextId = 1;
-  return { schema: 'kinetic-score/layout@1', name: 'Blank', spawner: { x: 0, y: 9.5, angle: -Math.PI / 2 }, elements: [el('ramp', -7.5, -8.5, 7.5, -8.5)] };
+  return { schema: 'musical-marbles/layout@1', name: 'Blank', spawner: { x: 0, y: 9.5, angle: -Math.PI / 2 }, elements: [el('ramp', -7.5, -8.5, 7.5, -8.5)] };
 }
 
 export const BUILDER_PRESETS: { id: string; label: string; make: () => Layout }[] = [
